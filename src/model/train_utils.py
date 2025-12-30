@@ -1,0 +1,241 @@
+import os
+import numpy as np
+import torch
+from torch import nn, optim
+from sklearn.metrics import (roc_auc_score, precision_score, average_precision_score, recall_score, f1_score)
+from model.model_architecture import CNN_GRU_Model
+from src.data.dataloader_for_torch import get_dataloader
+
+from src.logger import get_logger
+
+logger = get_logger(__name__, log_file='train_utils.log')
+
+def compute_pos_weight(train_loader, device):
+    """Returns the weight of class..basically there is less data in 
+       positive class and it returns by how much. spoiler: around 14% of data is only positive"""
+    
+    try:
+  
+        all_labels = []
+
+        for _, y in train_loader:
+            all_labels.append(y)
+
+        y = torch.cat(all_labels).to(device)
+        num_pos = (y==1).sum()
+        num_neg = (y==0).sum()
+
+        pos_weight = (num_neg / num_pos).float()
+        logger.info(f"Computed positive class weight: {pos_weight.item()}")
+        return pos_weight
+    
+    except Exception:
+        logger.exception("Error computing positive class weight.")
+        raise
+
+class Trainer:
+    """Trainer class to handle training, validation, and testing of the model."""
+    def __init__(self, train_loader, val_loader, test_loader, lr=1e-3):
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model = CNN_GRU_Model().to(self.device)
+        logger.info(f"Model initialized on device: {self.device}")
+
+        self.train_loader = train_loader
+        self.val_loader = val_loader
+        self.test_loader = test_loader
+  
+        pos_weight = compute_pos_weight(train_loader, self.device)
+        self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_weight).to(self.device))
+        self.optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=1e-4)
+
+        self.best_threshold = 0.41
+
+        logger.info(f"Initialized Trainer with best_threshold={self.best_threshold}")
+
+    
+    def train_one_epoch(self):
+        """The baseline training function for one epoch."""
+
+        self.model.train()
+        train_loss = 0.0
+        train_correct = 0
+        train_total = 0
+
+        for x_batch, y_batch in self.train_loader:
+
+            try:
+
+                x_batch, y_batch = x_batch.to(self.device), y_batch.to(self.device).float()
+
+                self.optimizer.zero_grad()
+
+                logits = self.model(x_batch)
+                loss = self.loss_fn(logits, y_batch)
+
+                loss.backward()
+                self.optimizer.step()
+
+                train_loss += loss.item() * x_batch.size(0)
+
+                probs = torch.sigmoid(logits)
+                preds = (probs >= 0.5).float()
+                train_correct += (preds == y_batch).sum().item()
+                train_total += y_batch.size(0)
+
+            except Exception:
+                logger.exception("Error during training step.")
+                raise
+
+        train_acc = train_correct / train_total
+        train_loss /= train_total
+
+        return {"Train_Acc": train_acc, "Train_Loss":train_loss}
+
+
+    def val_one_epoch(self):
+        """The baseline validation function for one epoch."""
+
+        self.model.eval()
+        val_loss = 0.0
+
+        all_probs = []
+        all_labels = []
+        
+        with torch.no_grad():
+           for x_batch, y_batch in self.val_loader:
+               
+               try: 
+                    x_batch, y_batch = x_batch.to(self.device), y_batch.to(self.device).float()
+
+                    logits = self.model(x_batch)
+                    loss = self.loss_fn(logits, y_batch)
+
+                    val_loss += loss.item() * x_batch.size(0)
+
+                    probs = torch.sigmoid(logits)
+                    all_probs.append(probs.cpu())
+                    all_labels.append(y_batch.cpu())
+
+               except Exception:
+                   logger.exception("Error during validation step.")
+                   raise
+            
+
+        all_probs = torch.cat(all_probs).numpy()
+        all_labels = torch.cat(all_labels).numpy()
+
+        val_loss /= len(all_labels)
+
+        thresholds = np.linspace(0.05, 0.95, 91)
+
+        target_recall = 0.75
+        best_precision = 0
+        best_t = 0.5
+
+        for t in thresholds:
+            preds = (all_probs >= t).astype(int)
+
+            recall = recall_score(all_labels, preds)
+            if recall >= target_recall:
+                precision = precision_score(all_labels, preds)
+                if precision > best_precision:
+                    best_precision = precision
+                    best_t = t
+
+        self.best_threshold = best_t
+
+        final_preds = (all_probs >= best_t).astype(int)
+
+        val_prauc = average_precision_score(all_labels, all_probs)
+        val_auc = roc_auc_score(all_labels, all_probs)
+        val_precision = precision_score(all_labels, final_preds)
+        val_recall = recall_score(all_labels, final_preds)
+        val_f1 = f1_score(all_labels, final_preds)
+
+        val_acc = (final_preds == all_labels).mean()
+
+        return {
+        "Val_Acc": val_acc,
+        "ROC_AUC": val_auc,
+        "PR_AUC": val_prauc,
+        "Recall": val_recall,
+        "Precision": val_precision,
+        "F1": val_f1,
+        "Val_Loss": val_loss,
+        "best_threshold": best_t
+    }
+
+    def train_val_epochs(self, epochs):
+        """Train and validate the model for a given number of epochs."""
+        for epoch in range(epochs):
+            self.train_one_epoch()
+            self.val_one_epoch()
+
+        logger.info(
+            f"Validation Complete after {epochs} epochs. Best threshold: {self.best_threshold:.3f}, "
+            f"Recall: {self.val_one_epoch()['Recall']}"
+        )
+
+    
+    def test_time(self):
+        """The baseline testing function."""
+        self.model.eval()
+        test_loss = 0.0
+
+        all_probs = []
+        all_labels = []
+
+        with torch.no_grad():
+            for x_batch, y_batch in self.test_loader():
+
+                try:
+
+                    x_batch, y_batch = x_batch.to(self.device), y_batch.to(self.device).float()
+
+                    logits = self.model(x_batch)
+                    loss = self.loss_fn(logits, y_batch)
+                    test_loss += loss.item() * x_batch.size(0)
+
+                    probs = torch.sigmoid(logits)
+                    all_probs.append(probs.cpu())
+                    all_labels.append(y_batch.cpu())
+
+                except Exception:
+                    logger.exception("Error during testing step.")
+                    raise
+
+            all_probs = torch.cat(all_probs).numpy()
+            all_labels = torch.cat(all_labels).numpy()
+
+            final_preds = (probs >= self.best_threshold).astype(int) 
+
+            test_prauc = average_precision_score(all_labels, all_probs)
+            test_auc = roc_auc_score(all_labels,  all_probs)
+            test_recall = recall_score(all_labels,  final_preds)
+            test_precision = precision_score(all_labels,  final_preds)
+            test_f1_score = f1_score(all_labels,  final_preds)
+
+            test_acc = (final_preds == all_labels).mean()
+            logger.info(f"Test Complete. Test Acc: {test_acc}, ROC_AUC: {test_auc}, PR_AUC: {test_prauc}, "
+                        f"Recall: {test_recall}, Precision: {test_precision}, F1: {test_f1_score}")
+            return {
+                "Test_Acc": test_acc,
+                "ROC_AUC": test_auc,
+                "PR_AUC": test_prauc,
+                "Recall": test_recall,
+                "Precision": test_precision,
+                "F1": test_f1_score
+            }
+
+if __name__ == "__main__":
+    train_loaders, val_loaders, test_loaders = get_dataloader()
+
+    trainer = Trainer(train_loaders, val_loaders, test_loaders)
+    
+    trainer.train_val_epochs(epochs=10)
+
+    test_metrics = trainer.test_time()
+    print(test_metrics)
+    
+    os.makedirs("artifacts", exist_ok=True)
+    torch.save(trainer.model.state_dict(), "artifacts/icu_deterioration_cnn_gru_model.pth")

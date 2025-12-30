@@ -1,3 +1,11 @@
+*.logs
+
+
+data/raw
+data/processed
+
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -138,6 +146,7 @@ celerybeat.pid
 .env
 .envrc
 .venv
+myvenv/
 env/
 venv/
 ENV/
