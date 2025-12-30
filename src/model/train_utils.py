@@ -51,6 +51,9 @@ class Trainer:
 
         self.best_threshold = 0.41
 
+        self.artifact_dir = PARAMS['artifacts']['model_dir']
+        os.makedirs(self.artifact_dir, exist_ok=True)
+
         logger.info(f"Initialized Trainer with best_threshold={self.best_threshold}")
 
     
@@ -227,16 +230,15 @@ class Trainer:
                 "Precision": test_precision,
                 "F1": test_f1_score
             }
+        
+    def save_model(self, filename="cnn_gru_model.pth"):
+        """Saves the model state dictionary to the specified filename."""
+        try:
+            filepath = os.path.join(self.artifact_dir, filename)
+            torch.save(self.model.state_dict(), filepath)
+            logger.info(f"Model saved to {filepath}")
+        except Exception:
+            logger.exception("Error saving the model.")
+            raise
 
-if __name__ == "__main__":
-    train_loaders, val_loaders, test_loaders = get_dataloader()
-
-    trainer = Trainer(train_loaders, val_loaders, test_loaders)
     
-    trainer.train_val_epochs(epochs=PARAMS['training']['num_epochs'])
-
-    test_metrics = trainer.test_time()
-    print(test_metrics)
-    
-    os.makedirs("artifacts", exist_ok=True)
-    torch.save(trainer.model.state_dict(), "artifacts/icu_deterioration_cnn_gru_model.pth")
