@@ -5,12 +5,14 @@ from sklearn.preprocessing import StandardScaler
 import pickle
 import torch
 from torch.utils.data import IterableDataset
+from src.config import load_params
 
 from src.logger import get_logger
 from src.data.data_ingestion import ICUDataIngestion
 
 ingest = ICUDataIngestion()
 logger = get_logger(__name__, log_file='data_preprocessing.log')
+PARAMS = load_params()
 
 def process_patient(file_path):
     """Process a single patient record from a CSV file into a wide-format DataFrame and attach record id."""
@@ -140,7 +142,7 @@ def scaled_patients_to_padded_array(scaled_patients):
 class SlidingWindowDataset(IterableDataset):
     """A PyTorch IterableDataset that generates sliding windows from patient time series data.
        Looks past `window_size` time steps to predict the outcome at `horizon` time steps ahead."""
-    def __init__(self, X, y, window_size=12, horizon=6):
+    def __init__(self, X, y, window_size=PARAMS['data']['window_size'], horizon=PARAMS['data']['horizon']):
         self.X = X
         self.y = y
         self.window_size = window_size

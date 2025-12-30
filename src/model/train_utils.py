@@ -5,10 +5,11 @@ from torch import nn, optim
 from sklearn.metrics import (roc_auc_score, precision_score, average_precision_score, recall_score, f1_score)
 from model.model_architecture import CNN_GRU_Model
 from src.data.dataloader_for_torch import get_dataloader
-
+from src.config import load_params
 from src.logger import get_logger
 
 logger = get_logger(__name__, log_file='train_utils.log')
+PARAMS = load_params()
 
 def compute_pos_weight(train_loader, device):
     """Returns the weight of class..basically there is less data in 
@@ -35,7 +36,7 @@ def compute_pos_weight(train_loader, device):
 
 class Trainer:
     """Trainer class to handle training, validation, and testing of the model."""
-    def __init__(self, train_loader, val_loader, test_loader, lr=1e-3):
+    def __init__(self, train_loader, val_loader, test_loader, lr=PARAMS['training']['learning_rate']):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = CNN_GRU_Model().to(self.device)
         logger.info(f"Model initialized on device: {self.device}")
@@ -46,7 +47,7 @@ class Trainer:
   
         pos_weight = compute_pos_weight(train_loader, self.device)
         self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_weight).to(self.device))
-        self.optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=1e-4)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=PARAMS['training']['weight_decay'])
 
         self.best_threshold = 0.41
 
@@ -232,7 +233,7 @@ if __name__ == "__main__":
 
     trainer = Trainer(train_loaders, val_loaders, test_loaders)
     
-    trainer.train_val_epochs(epochs=10)
+    trainer.train_val_epochs(epochs=PARAMS['training']['num_epochs'])
 
     test_metrics = trainer.test_time()
     print(test_metrics)

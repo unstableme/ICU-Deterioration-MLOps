@@ -1,0 +1,36 @@
+data:
+  raw_data_dir: data/raw
+  processed_data_dir: data/processed
+  window_size: 12
+  horizon: 6
+  batch_size: 64
+
+
+model:
+  cnn:
+    out_channels_1: 32
+    out_channels_2: 16
+    kernel_size: 3
+    dropout_1: 0.2
+    dropout_2: 0.2
+    padding: 1
+
+  gru:
+    input_size: 16
+    hidden_size: 32
+    dropout: 0.3
+
+  fc:
+    hidden_size: 16
+    dropout: 0.4
+
+
+training:
+  epochs: 10
+  learning_rate: 0.001
+  weight_decay: 1e-4
+
+artifacts:
+  model_dir: artifacts
+
+

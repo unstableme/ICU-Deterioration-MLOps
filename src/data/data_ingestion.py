@@ -1,11 +1,12 @@
 import os
 import pandas as pd
 from src.logger import get_logger
+from src.config import load_params
 
 logger = get_logger(__name__, log_file='data_ingestion.log')
-
+PARAMS = load_params()
 class ICUDataIngestion:
-    def __init__(self, raw_data_dir='data/raw'):
+    def __init__(self, raw_data_dir=PARAMS['data']['raw_data_dir']):
         """Initializes the data ingestion class with paths to raw data directories and outcome files."""
         
         self.raw_data_dir = raw_data_dir
