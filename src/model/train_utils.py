@@ -47,7 +47,7 @@ class Trainer:
   
         pos_weight = compute_pos_weight(train_loader, self.device)
         self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_weight).to(self.device))
-        self.optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=PARAMS['training']['weight_decay'])
+        self.optimizer = optim.Adam(self.model.parameters(), lr=PARAMS['training']['learning_rate'], weight_decay=PARAMS['training']['weight_decay'])
 
         self.best_threshold = 0.41
 
