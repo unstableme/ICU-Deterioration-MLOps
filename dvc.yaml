@@ -1,6 +1,6 @@
 stages:
   data_preprocessing:
-    cmd: python src/entrypoints/preprocess.py
+    cmd: python -m src.entrypoints.preprocess
     deps:
       - src/data/data_ingestion.py
       - src/data/data_preprocessing.py
@@ -12,7 +12,7 @@ stages:
       - data/processed/
     
   train:
-    cmd: python src/entrypoints/train.py
+    cmd: python -m src.entrypoints.train
     deps:
       - src/model/train_utils.py
       - src/model/model_architecture.py
