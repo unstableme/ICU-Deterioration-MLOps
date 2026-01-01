@@ -1,0 +1,31 @@
+schema: '2.0'
+stages:
+  data_preprocessing:
+    cmd: python -m src.entrypoints.preprocess
+    deps:
+    - path: data/raw/
+      hash: md5
+      md5: d9bdca6deb3b606acfb23e2b9aaa500a.dir
+      size: 83182213
+      nfiles: 12003
+    - path: params.yaml
+      hash: md5
+      md5: a29c2669d171683198ea38162f965d2f
+      size: 503
+    - path: src/data/data_ingestion.py
+      hash: md5
+      md5: 61c380510c7e347ebd96388c13af679f
+      size: 3093
+    - path: src/data/data_preprocessing.py
+      hash: md5
+      md5: b32cf85dcd985d52b6ba61d9f37b914a
+      size: 7548
+    params:
+      params.yaml:
+        data.raw_data_dir: data/raw
+    outs:
+    - path: data/processed/
+      hash: md5
+      md5: 546af616bbb4d6ad46a4ea85f6e6a2fd.dir
+      size: 792544735
+      nfiles: 3

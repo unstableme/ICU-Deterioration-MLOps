@@ -22,6 +22,6 @@ stages:
     params:
       - training.learning_rate
       - training.weight_decay
-      - training.epochs
+      - training.num_epochs
     outs:
       - artifacts

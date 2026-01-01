@@ -13,7 +13,7 @@ PARAMS = load_params()
 def get_dataloader(window_size=PARAMS['data']['window_size'], horizon=PARAMS['data']['horizon'], batch_size=PARAMS['data']['batch_size']):
     """Create a DataLoader for the sliding window dataset."""
     
-    PROJECT_ROOT = Path(__file__).resolve().parent[2] # parent[0] is 'data', parent[1] is 'src', parent[2] is project root
+    PROJECT_ROOT = Path(__file__).resolve().parents[2] # parent[0] is 'data', parent[1] is 'src', parent[2] is project root
     PROCESSED_DATA_PATH = PROJECT_ROOT / 'data' / 'processed'
 
     logger.info(f"Loading processed data from {PROCESSED_DATA_PATH}")

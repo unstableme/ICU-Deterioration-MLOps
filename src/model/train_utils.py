@@ -2,8 +2,8 @@ import os
 import numpy as np
 import torch
 from torch import nn, optim
-from sklearn.metrics import (roc_auc_score, precision_score, average_precision_score, recall_score, f1_score)
-from model.model_architecture import CNN_GRU_Model
+from sklearn.metrics import roc_auc_score, average_precision_score
+from src.model.model_architecture import CNN_GRU_Model
 from src.data.dataloader_for_torch import get_dataloader
 from src.config import load_params
 from src.logger import get_logger
@@ -16,7 +16,6 @@ def compute_pos_weight(train_loader, device):
        positive class and it returns by how much. spoiler: around 14% of data is only positive"""
     
     try:
-  
         all_labels = []
 
         for _, y in train_loader:
@@ -44,10 +43,15 @@ class Trainer:
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.test_loader = test_loader
+        self.lr = lr
   
         pos_weight = compute_pos_weight(train_loader, self.device)
         self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_weight).to(self.device))
-        self.optimizer = optim.Adam(self.model.parameters(), lr=PARAMS['training']['learning_rate'], weight_decay=PARAMS['training']['weight_decay'])
+        self.optimizer = optim.Adam(
+            self.model.parameters(),
+            lr=lr,
+            weight_decay=float(PARAMS['training']['weight_decay'])
+        )
 
         self.best_threshold = 0.41
 
@@ -68,8 +72,7 @@ class Trainer:
         for x_batch, y_batch in self.train_loader:
 
             try:
-
-                x_batch, y_batch = x_batch.to(self.device), y_batch.to(self.device).float()
+                x_batch, y_batch = x_batch.to(self.device).float(), y_batch.to(self.device).float().unsqueeze(1)
 
                 self.optimizer.zero_grad()
 
@@ -102,72 +105,63 @@ class Trainer:
         self.model.eval()
         val_loss = 0.0
 
+        tp = 0
+        fp = 0
+        fn = 0
+        tn = 0
+
         all_probs = []
         all_labels = []
-        
+
         with torch.no_grad():
-           for x_batch, y_batch in self.val_loader:
-               
-               try: 
-                    x_batch, y_batch = x_batch.to(self.device), y_batch.to(self.device).float()
+            for x_batch, y_batch in self.val_loader:
+                try:
+                    x_batch, y_batch = x_batch.to(self.device).float(), y_batch.to(self.device).float().unsqueeze(1)
+                    assert not torch.isnan(x_batch).any()
 
                     logits = self.model(x_batch)
                     loss = self.loss_fn(logits, y_batch)
-
                     val_loss += loss.item() * x_batch.size(0)
 
                     probs = torch.sigmoid(logits)
+                    preds = (probs >= self.best_threshold).int()
+
+                    tp += ((preds == 1) & (y_batch == 1)).sum().item()
+                    fp += ((preds == 1) & (y_batch == 0)).sum().item()
+                    fn += ((preds == 0) & (y_batch == 1)).sum().item()
+                    tn += ((preds == 0) & (y_batch == 0)).sum().item()
+
                     all_probs.append(probs.cpu())
                     all_labels.append(y_batch.cpu())
 
-               except Exception:
-                   logger.exception("Error during validation step.")
-                   raise
-            
+                except Exception:
+                    logger.exception("Error during validation step.")
+                    raise
 
         all_probs = torch.cat(all_probs).numpy()
         all_labels = torch.cat(all_labels).numpy()
 
-        val_loss /= len(all_labels)
+        val_loss /= (tp + tn + fp + fn)
 
-        thresholds = np.linspace(0.05, 0.95, 91)
-
-        target_recall = 0.75
-        best_precision = 0
-        best_t = 0.5
-
-        for t in thresholds:
-            preds = (all_probs >= t).astype(int)
-
-            recall = recall_score(all_labels, preds)
-            if recall >= target_recall:
-                precision = precision_score(all_labels, preds)
-                if precision > best_precision:
-                    best_precision = precision
-                    best_t = t
-
-        self.best_threshold = best_t
-
-        final_preds = (all_probs >= best_t).astype(int)
+        recall = tp / (tp + fn + 1e-8)
+        precision = tp / (tp + fp + 1e-8)
+        f1 = 2 * precision * recall / (precision + recall + 1e-8)
+        val_acc = (tp + tn) / (tp + tn + fp + fn)
 
         val_prauc = average_precision_score(all_labels, all_probs)
         val_auc = roc_auc_score(all_labels, all_probs)
-        val_precision = precision_score(all_labels, final_preds)
-        val_recall = recall_score(all_labels, final_preds)
-        val_f1 = f1_score(all_labels, final_preds)
-
-        val_acc = (final_preds == all_labels).mean()
 
         return {
-        "Val_Acc": val_acc,
-        "ROC_AUC": val_auc,
-        "PR_AUC": val_prauc,
-        "Recall": val_recall,
-        "Precision": val_precision,
-        "F1": val_f1,
-        "Val_Loss": val_loss,
-        "best_threshold": best_t
-    }
+            "Val_Acc": val_acc,
+            "ROC_AUC": val_auc,
+            "PR_AUC": val_prauc,
+            "Recall": recall,
+            "Precision": precision,
+            "F1": f1,
+            "Val_Loss": val_loss,
+            "best_threshold": self.best_threshold
+        }
+
 
     def train_val_epochs(self, epochs):
         """Train and validate the model for a given number of epochs."""
@@ -177,7 +171,8 @@ class Trainer:
 
         logger.info(
             f"Validation Complete after {epochs} epochs. Best threshold: {self.best_threshold:.3f}, "
-            f"Recall: {self.val_one_epoch()['Recall']}"
+            f"Recall: {self.val_one_epoch()['Recall']}, Precision: {self.val_one_epoch()['Precision']}, "
+            f"F1: {self.val_one_epoch()['F1']}, acc: {self.val_one_epoch()['Val_Acc']}"
         )
 
     
@@ -186,21 +181,32 @@ class Trainer:
         self.model.eval()
         test_loss = 0.0
 
+        tp = 0
+        fp = 0
+        fn = 0
+        tn = 0
+
         all_probs = []
         all_labels = []
 
         with torch.no_grad():
-            for x_batch, y_batch in self.test_loader():
+            for x_batch, y_batch in self.test_loader:
 
                 try:
-
-                    x_batch, y_batch = x_batch.to(self.device), y_batch.to(self.device).float()
+                    x_batch, y_batch = x_batch.to(self.device).float(), y_batch.to(self.device).float().unsqueeze(1)
 
                     logits = self.model(x_batch)
                     loss = self.loss_fn(logits, y_batch)
                     test_loss += loss.item() * x_batch.size(0)
 
                     probs = torch.sigmoid(logits)
+                    preds = (probs >= self.best_threshold).int()
+
+                    tp += ((preds == 1) & (y_batch == 1)).sum().item()
+                    fp += ((preds == 1) & (y_batch == 0)).sum().item()
+                    fn += ((preds == 0) & (y_batch == 1)).sum().item()
+                    tn += ((preds == 0) & (y_batch == 0)).sum().item()
+
                     all_probs.append(probs.cpu())
                     all_labels.append(y_batch.cpu())
 
@@ -208,28 +214,30 @@ class Trainer:
                     logger.exception("Error during testing step.")
                     raise
 
-            all_probs = torch.cat(all_probs).numpy()
-            all_labels = torch.cat(all_labels).numpy()
+        all_probs = torch.cat(all_probs).numpy()
+        all_labels = torch.cat(all_labels).numpy()
 
-            final_preds = (probs >= self.best_threshold).astype(int) 
+        recall = tp / (tp + fn + 1e-8)
+        precision = tp / (tp + fp + 1e-8)
+        f1 = 2 * precision * recall / (precision + recall + 1e-8)
+        test_acc = (tp + tn) / (tp + tn + fp + fn)
 
-            test_prauc = average_precision_score(all_labels, all_probs)
-            test_auc = roc_auc_score(all_labels,  all_probs)
-            test_recall = recall_score(all_labels,  final_preds)
-            test_precision = precision_score(all_labels,  final_preds)
-            test_f1_score = f1_score(all_labels,  final_preds)
+        test_prauc = average_precision_score(all_labels, all_probs)
+        test_auc = roc_auc_score(all_labels, all_probs)
 
-            test_acc = (final_preds == all_labels).mean()
-            logger.info(f"Test Complete. Test Acc: {test_acc}, ROC_AUC: {test_auc}, PR_AUC: {test_prauc}, "
-                        f"Recall: {test_recall}, Precision: {test_precision}, F1: {test_f1_score}")
-            return {
-                "Test_Acc": test_acc,
-                "ROC_AUC": test_auc,
-                "PR_AUC": test_prauc,
-                "Recall": test_recall,
-                "Precision": test_precision,
-                "F1": test_f1_score
-            }
+        logger.info(
+            f"Test Complete. Test Acc: {test_acc}, ROC_AUC: {test_auc}, PR_AUC: {test_prauc}, "
+            f"Recall: {recall}, Precision: {precision}, F1: {f1}"
+        )
+
+        return {
+            "Test_Acc": test_acc,
+            "ROC_AUC": test_auc,
+            "PR_AUC": test_prauc,
+            "Recall": recall,
+            "Precision": precision,
+            "F1": f1
+        }
         
     def save_model(self, filename="cnn_gru_model.pth"):
         """Saves the model state dictionary to the specified filename."""
@@ -240,5 +248,3 @@ class Trainer:
         except Exception:
             logger.exception("Error saving the model.")
             raise
-
-    

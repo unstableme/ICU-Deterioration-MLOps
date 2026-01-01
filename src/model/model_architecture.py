@@ -1,4 +1,4 @@
-from torch.nn import nn
+from torch import nn
 from src.config import load_params
 from src.logger import get_logger
 

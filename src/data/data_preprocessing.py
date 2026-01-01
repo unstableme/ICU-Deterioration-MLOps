@@ -83,7 +83,7 @@ def align_the_patients(all_patients, global_columns):
     try:
         
         for record_id, wide_df in all_patients:
-            aligned_df = wide_df.reindex(columns=global_columns)
+            aligned_df = wide_df.reindex(columns=global_columns, fill_value=0)
             aligned_patients.append((record_id, aligned_df))
         return aligned_patients
     except Exception as e:
@@ -127,6 +127,9 @@ def scaled_patients_to_padded_array(scaled_patients):
         record_ids = []
 
         for i, (record_id, df) in enumerate(scaled_patients):
+            if df.isna().any().any():
+              logger.warning(f"NaNs found in patient {record_id}. Filling with 0.")
+            df = df.fillna(0)  # fill missing values
             record_ids.append(record_id)
             time_steps = df.shape[0]
             array[i, :time_steps, :] = df.values
@@ -156,7 +159,11 @@ class SlidingWindowDataset(IterableDataset):
             seq_len = self.X[i].shape[0]
             for t in range(self.window_size, seq_len - self.horizon + 1):
                 X_window = self.X[i, t - self.window_size:t, :]
+                if np.isnan(X_window).any():
+                    logger.warning(f"NaNs in X_window for patient index {i}, time {t}")
                 y_window = self.y[i]
+                if np.isnan(X_window).any():
+                    logger.warning(f"NaNs in X_window for patient index {i}, time {t}")
                 
                 yield X_window, y_window
 
