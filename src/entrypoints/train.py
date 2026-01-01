@@ -40,7 +40,9 @@ def main():
             "learning_rate": PARAMS['training']['learning_rate'],
             "weight_decay": float(PARAMS['training']['weight_decay']),
             "num_epochs": PARAMS['training']['num_epochs'],
-            "batch_size": PARAMS['data']['batch_size']
+            "batch_size": PARAMS['data']['batch_size'],
+            "window_size": PARAMS['data']['window_size'],
+            "horizon": PARAMS['data']['horizon'],
         })
         
         

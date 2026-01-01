@@ -165,8 +165,6 @@ class Trainer:
 
 
         self.best_threshold = best_t
-        logger.info(f"Threshold {self.best_threshold:.3f} will be applied from next epoch")
-
 
         val_loss /= (tp + tn + fp + fn)
 
@@ -210,6 +208,8 @@ class Trainer:
                 f"PR_AUC: {val_metrics['PR_AUC']:.4f}, "
                 f"Best Threshold: {val_metrics['best_threshold']:.3f}"
             )
+
+            logger.info(f"Threshold {self.best_threshold:.3f} will be applied from next epoch")
 
         logger.info(
             f"Validation Complete after {epochs} epochs. Best threshold: {self.best_threshold:.3f}, "
