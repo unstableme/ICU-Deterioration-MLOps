@@ -29,3 +29,38 @@ stages:
       md5: 546af616bbb4d6ad46a4ea85f6e6a2fd.dir
       size: 792544735
       nfiles: 3
+  train:
+    cmd: python -m src.entrypoints.train
+    deps:
+    - path: data/processed/
+      hash: md5
+      md5: 546af616bbb4d6ad46a4ea85f6e6a2fd.dir
+      size: 792544735
+      nfiles: 3
+    - path: params.yaml
+      hash: md5
+      md5: a29c2669d171683198ea38162f965d2f
+      size: 503
+    - path: src/data/dataloader_for_torch.py
+      hash: md5
+      md5: af08f35f4d7adc75ddc0e74f5ab7f8e5
+      size: 2174
+    - path: src/model/model_architecture.py
+      hash: md5
+      md5: ba251219a98dc2f215918ccefc297136
+      size: 2091
+    - path: src/model/train_utils.py
+      hash: md5
+      md5: 67e7dcfdcf702989ab049f66e810161f
+      size: 8757
+    params:
+      params.yaml:
+        training.learning_rate: 0.001
+        training.num_epochs: 5
+        training.weight_decay: 0.0001
+    outs:
+    - path: artifacts
+      hash: md5
+      md5: 6b1cebe306cf80ba57779903ec35405b.dir
+      size: 51849
+      nfiles: 1
