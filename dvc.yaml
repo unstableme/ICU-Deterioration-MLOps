@@ -5,7 +5,6 @@ stages:
       - src/data/data_ingestion.py
       - src/data/data_preprocessing.py
       - data/raw/
-      - params.yaml
     params:
       - data.raw_data_dir
     outs:
@@ -18,7 +17,6 @@ stages:
       - src/model/model_architecture.py
       - src/data/dataloader_for_torch.py
       - data/processed/
-      - params.yaml
     params:
       - training.learning_rate
       - training.weight_decay

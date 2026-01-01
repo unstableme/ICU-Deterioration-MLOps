@@ -26,7 +26,7 @@ model:
 
 
 training:
-  num_epochs: 5
+  num_epochs: 12
   learning_rate: 0.0008
   weight_decay: 1e-4
 
