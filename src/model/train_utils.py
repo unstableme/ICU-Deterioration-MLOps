@@ -2,7 +2,7 @@ import os
 import numpy as np
 import torch
 from torch import nn, optim
-from sklearn.metrics import roc_auc_score, average_precision_score
+from sklearn.metrics import roc_auc_score, average_precision_score, recall_score, precision_score
 from src.model.model_architecture import CNN_GRU_Model
 from src.data.dataloader_for_torch import get_dataloader
 from src.config import load_params
@@ -140,6 +140,26 @@ class Trainer:
 
         all_probs = torch.cat(all_probs).numpy()
         all_labels = torch.cat(all_labels).numpy()
+
+        thresholds = np.linspace(0.05, 0.95, 91)
+        target_recall = 0.75
+
+        best_precision = 0.0
+        best_t = self.best_threshold  # fallback
+
+        for t in thresholds:
+            preds = (all_probs >= t).astype(int)
+
+            recall = recall_score(all_labels, preds)
+            if recall >= target_recall:
+                precision = precision_score(all_labels, preds, zero_division=0)
+                if precision > best_precision:
+                    best_precision = precision
+                    best_t = t
+
+        self.best_threshold = best_t
+        logger.info(f"Threshold {self.best_threshold:.3f} will be applied from next epoch")
+
 
         val_loss /= (tp + tn + fp + fn)
 

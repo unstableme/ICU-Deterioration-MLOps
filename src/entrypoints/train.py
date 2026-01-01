@@ -44,15 +44,14 @@ def main():
         
         
         for epoch, train_metrics, val_metrics in trainer.train_val_epochs(epochs=PARAMS['training']['num_epochs']):
-            mlflow.log_metric("Train_Loss", train_metrics['Train_Loss'], step=epoch)
             mlflow.log_metric("Train_Acc", train_metrics['Train_Acc'], step=epoch)
             mlflow.log_metric("Val_Acc", val_metrics['Val_Acc'], step=epoch)
             mlflow.log_metric("Val_Recall", val_metrics['Recall'], step=epoch)
             mlflow.log_metric("Val_Precision", val_metrics['Precision'], step=epoch)
             mlflow.log_metric("Val_F1", val_metrics['F1'], step=epoch)
             mlflow.log_metric("Best_Threshold", trainer.best_threshold, step=epoch)
-            mlflow.log_metric("Roc_Auc", val_metrics['ROC_AUC'], step=epoch)
-            mlflow.log_metric("PR_AUC", val_metrics['PR_AUC'], step=epoch)
+            mlflow.log_metric("Val_ROC_AUC", val_metrics['ROC_AUC'], step=epoch)
+            mlflow.log_metric("Val_PR_AUC", val_metrics['PR_AUC'], step=epoch)
         
 
         test_metrics = trainer.test_time()
