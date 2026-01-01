@@ -3,7 +3,7 @@ from src.model.train_utils import Trainer
 from src.config import load_params
 from src.logger import get_logger
 import mlflow
-import dagshub
+from datetime import datetime
 
 import dagshub
 dagshub.init(repo_owner='unstableme', repo_name='ICU-Deterioration-MLOps', mlflow=True)
@@ -20,8 +20,9 @@ def main():
 
     train_loaders, val_loaders, test_loaders = get_dataloader()
     trainer = Trainer(train_loaders, val_loaders, test_loaders)
-
-    with mlflow.start_run(run_name="CNN_GRU_Training"):
+    
+    run_name = f"CNN_GRU_Training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    with mlflow.start_run(run_name=run_name):
         logger.info("MLflow run started for CNN_GRU_Training")
     
         mlflow.set_tags({

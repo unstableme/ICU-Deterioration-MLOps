@@ -147,15 +147,22 @@ class Trainer:
         best_precision = 0.0
         best_t = self.best_threshold  # fallback
 
-        for t in thresholds:
-            preds = (all_probs >= t).astype(int)
+        labels = all_labels.astype(np.int8)
 
-            recall = recall_score(all_labels, preds)
-            if recall >= target_recall:
-                precision = precision_score(all_labels, preds, zero_division=0)
-                if precision > best_precision:
-                    best_precision = precision
+        for t in thresholds:
+            preds = (all_probs >= t).astype(np.int8)
+
+            tp_t = np.sum((preds == 1) & (labels == 1))
+            fp_t = np.sum((preds == 1) & (labels == 0))
+            fn_t = np.sum((preds == 0) & (labels == 1))
+
+            recall_t = tp_t / (tp_t + fn_t + 1e-8)
+            if recall_t >= target_recall:
+                precision_t = tp_t / (tp_t + fp_t + 1e-8)
+                if precision_t > best_precision:
+                    best_precision = precision_t
                     best_t = t
+
 
         self.best_threshold = best_t
         logger.info(f"Threshold {self.best_threshold:.3f} will be applied from next epoch")
