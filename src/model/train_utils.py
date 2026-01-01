@@ -166,14 +166,31 @@ class Trainer:
     def train_val_epochs(self, epochs):
         """Train and validate the model for a given number of epochs."""
         for epoch in range(epochs):
-            self.train_one_epoch()
-            self.val_one_epoch()
+            train_metrics = self.train_one_epoch()
+            val_metrics = self.val_one_epoch()
+
+            # Epoch-level logging
+            logger.info(
+                f"Epoch [{epoch+1}/{epochs}] | "
+                f"Train Loss: {train_metrics['Train_Loss']:.4f}, "
+                f"Train Acc: {train_metrics['Train_Acc']:.4f} | "
+                f"Val Loss: {val_metrics['Val_Loss']:.4f}, "
+                f"Val Acc: {val_metrics['Val_Acc']:.4f}, "
+                f"Recall: {val_metrics['Recall']:.4f}, "
+                f"Precision: {val_metrics['Precision']:.4f}, "
+                f"F1: {val_metrics['F1']:.4f}, "
+                f"ROC_AUC: {val_metrics['ROC_AUC']:.4f}, "
+                f"PR_AUC: {val_metrics['PR_AUC']:.4f}, "
+                f"Best Threshold: {val_metrics['best_threshold']:.3f}"
+            )
 
         logger.info(
             f"Validation Complete after {epochs} epochs. Best threshold: {self.best_threshold:.3f}, "
-            f"Recall: {self.val_one_epoch()['Recall']}, Precision: {self.val_one_epoch()['Precision']}, "
-            f"F1: {self.val_one_epoch()['F1']}, acc: {self.val_one_epoch()['Val_Acc']}"
+            f"Recall: {val_metrics['Recall']}, Precision: {val_metrics['Precision']}, "
+            f"F1: {val_metrics['F1']}, acc: {val_metrics['Val_Acc']},"
+            f" PR_AUC: {val_metrics['PR_AUC']}, ROC_AUC: {val_metrics['ROC_AUC']}"
         )
+        yield epoch, train_metrics, val_metrics
 
     
     def test_time(self):

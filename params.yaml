@@ -1,7 +1,7 @@
 data:
   raw_data_dir: data/raw
   processed_data_dir: data/processed
-  window_size: 12
+  window_size: 18
   horizon: 6
   batch_size: 64
 
@@ -11,7 +11,7 @@ model:
     out_channels_1: 32
     out_channels_2: 16
     kernel_size: 3
-    dropout_1: 0.2
+    dropout_1: 0.3
     dropout_2: 0.2
     padding: 1
 
@@ -27,7 +27,7 @@ model:
 
 training:
   num_epochs: 5
-  learning_rate: 0.001
+  learning_rate: 0.0008
   weight_decay: 1e-4
 
 artifacts:
