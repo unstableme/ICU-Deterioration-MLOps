@@ -3,6 +3,7 @@ from src.model.train_utils import Trainer
 from src.config import load_params
 from src.logger import get_logger
 import mlflow
+from mlflow.tracking import MlflowClient
 from datetime import datetime
 
 import dagshub
@@ -10,6 +11,7 @@ dagshub.init(repo_owner='unstableme', repo_name='ICU-Deterioration-MLOps', mlflo
 
 logger = get_logger(__name__, log_file='Entrypoints_train.log')
 PARAMS = load_params()
+client = MlflowClient()
 
 def main():
     """Main function to orchestrate model training. """
@@ -71,6 +73,28 @@ def main():
         mlflow.log_artifact("artifacts/cnn_gru_model.pth", artifact_path="raw_model")
         mlflow.pytorch.log_model(trainer.model, artifact_path="mlflow_organized_model")
         logger.info("Model and artifacts logged to MLflow.")
+        
+        MODEL_NAME = "CNN_GRU_ICU_Deterioration_Model"
+        if (test_metrics['PR_AUC'] >= PARAMS['mlflow_model_registration']['mlflow_pr_auc_threshold'] 
+            and test_metrics['Recall'] >= PARAMS['mlflow_model_registration']['mlflow_recall_threshold']
+            and test_metrics['ROC_AUC'] >= PARAMS['mlflow_model_registration']['mlflow_roc_auc_threshold']
+            ):
+
+            logger.info("Model passed the criteria and now is being registered.")
+
+            model_uri = f"runs:/{mlflow.active_run().info.run_id}/mlflow_organized_model"
+            result = mlflow.register_model(model_uri, MODEL_NAME)
+            logger.info(f"Model registered under the name: {MODEL_NAME}")
+
+            client.transition_model_version_stage(
+                name=MODEL_NAME,
+                version=result.version,
+                stage="Staging",
+                archive_existing_versions=True
+            )
+            logger.info(f"Model version {result.version} transitioned to 'Staging' stage.")
+        else:
+            logger.info("Model did not meet the criteria for registration.")
 
 if __name__ == "__main__":
     try:

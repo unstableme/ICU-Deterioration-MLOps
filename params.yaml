@@ -26,11 +26,16 @@ model:
 
 
 training:
-  num_epochs: 12
+  num_epochs: 5
   learning_rate: 0.0008
   weight_decay: 1e-4
 
 artifacts:
   model_dir: artifacts
+
+mlflow_model_registration:
+  mlflow_pr_auc_threshold: 0.15
+  mlflow_recall_threshold: 0.90
+  mlflow_roc_auc_threshold: 0.50
 
 
