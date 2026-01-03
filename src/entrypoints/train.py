@@ -80,21 +80,59 @@ def main():
             and test_metrics['ROC_AUC'] >= PARAMS['mlflow_model_registration']['mlflow_roc_auc_threshold']
             ):
 
-            logger.info("Model passed the criteria and now is being registered.")
+            logger.info("Model passed the first criteria and now is being checked for second criteria.")
 
-            model_uri = f"runs:/{mlflow.active_run().info.run_id}/mlflow_organized_model"
-            result = mlflow.register_model(model_uri, MODEL_NAME)
-            logger.info(f"Model registered under the name: {MODEL_NAME}")
+            def get_metrics_from_staged_model(model_name, client):
+                """Retrieve metrics from the latest model version in 'Staging' stage, 
+                   later to be compared against current model's metrics."""
+                try:
+                    versions = client.get_latest_versions(model_name, stages=["Staging"])
+                    if not versions:
+                        logger.info("No versions found in 'Staging' stage.")
+                        return None
+                    run_id = versions[0].run_id
+                    run = mlflow.get_run(run_id)
+                    pr_auc = run.data.metrics.get("Test_PR_AUC")
+                    roc_auc = run.data.metrics.get("Test_ROC_AUC")
+                    return {"PR_AUC": pr_auc, "ROC_AUC": roc_auc}
+                
+                except Exception as e:
+                    logger.exception(f"Error retrieving metrics from staged model: {e}")
+                    return None
 
-            client.transition_model_version_stage(
-                name=MODEL_NAME,
-                version=result.version,
-                stage="Staging",
-                archive_existing_versions=True
-            )
-            logger.info(f"Model version {result.version} transitioned to 'Staging' stage.")
-        else:
-            logger.info("Model did not meet the criteria for registration.")
+            staged_model_metrics = get_metrics_from_staged_model(MODEL_NAME, client)
+            should_register = False
+            if staged_model_metrics is None:
+                should_register = True  
+                logger.info("No staged model found. Proceeding to register the current model.")
+            else:
+                staged_model_pr_auc = staged_model_metrics['PR_AUC']
+                staged_model_roc_auc = staged_model_metrics['ROC_AUC']
+
+                if (test_metrics['PR_AUC'] < staged_model_pr_auc 
+                    or test_metrics['ROC_AUC'] < staged_model_roc_auc):
+                    logger.info("Current model did not outperform the staged model. Registration aborted.")
+                    logger.info(f"Staged Model PR_AUC: {staged_model_pr_auc}, Current Model PR_AUC: {test_metrics['PR_AUC']}")
+                    logger.info(f"Staged Model ROC_AUC: {staged_model_roc_auc}, Current Model ROC_AUC: {test_metrics['ROC_AUC']}")
+                    should_register = False
+                else:
+                    should_register = True
+                    logger.info("Current model outperformed the staged model. Proceeding with registration & staging.")
+
+            if should_register:
+                model_uri = f"runs:/{mlflow.active_run().info.run_id}/mlflow_organized_model"
+                result = mlflow.register_model(model_uri, MODEL_NAME)
+                logger.info(f"Model registered under the name: {MODEL_NAME}")
+
+                client.transition_model_version_stage(
+                    name=MODEL_NAME,
+                    version=result.version,
+                    stage="Staging",
+                    archive_existing_versions=True
+                )
+                logger.info(f"Model version {result.version} transitioned to 'Staging' stage.")
+            else:
+                logger.info("Model did not meet the criteria for registration.")
 
 if __name__ == "__main__":
     try:
