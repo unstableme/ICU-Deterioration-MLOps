@@ -22,7 +22,7 @@ with DAG(
 
     data_preprocess = DockerOperator(
         task_id='preprocess_icu_deterioration_data',
-        image='icu-deterioration-mlops:latest', 
+        image='unstableme02/icu-deterioration-mlops:latest', 
         api_version='auto',
         auto_remove=True,
         command='dvc repro data_preprocessing',
@@ -36,7 +36,7 @@ with DAG(
 
     train_model = DockerOperator(
         task_id='train_icu_deterioration_model',
-        image='icu-deterioration-mlops:latest',
+        image='unstableme02/icu-deterioration-mlops:latest',
         api_version='auto',
         auto_remove=True,
         command='dvc repro train',
