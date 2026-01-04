@@ -4,14 +4,27 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     git \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# Upgrade pip first (important)
+RUN pip install --upgrade pip
+
+# Install CPU-only PyTorch explicitly
+RUN pip install \
+    torch==2.1.1+cpu \
+    torchvision==0.16.1+cpu \
+    torchaudio==2.1.1+cpu \
+    --index-url https://download.pytorch.org/whl/cpu
+
+# Install the rest (lightweight libs)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
 COPY dvc.yaml .
 COPY params.yaml .
-COPY .dvc/ ./.dvc/ 
+COPY .dvc/ ./.dvc/
+COPY params.yaml .
 
-# CMD [] #not needed as we are using airflows DockerOperator to run specific commands which overrides this 
+# No CMD — Airflow overrides it
