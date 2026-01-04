@@ -17,14 +17,14 @@ with DAG(
     schedule_interval=None,
     start_date=datetime(2024, 1, 3),
     catchup=False,
-    tag =['icu_deterioration', 'model_training']
+    tags=['icu_deterioration', 'model_training']
 ) as dag:
 
     data_preprocess = DockerOperator(
         task_id='preprocess_icu_deterioration_data',
         image='unstableme02/icu-deterioration-mlops:latest', 
         api_version='auto',
-        auto_remove=True,
+        auto_remove="force", #newer version requires True
         command='dvc repro data_preprocessing',
         docker_url='unix://var/run/docker.sock',
         network_mode='bridge',
@@ -38,7 +38,7 @@ with DAG(
         task_id='train_icu_deterioration_model',
         image='unstableme02/icu-deterioration-mlops:latest',
         api_version='auto',
-        auto_remove=True,
+        auto_remove="force", #True in newer version
         command='dvc repro train',
         docker_url='unix://var/run/docker.sock',
         network_mode='bridge',
