@@ -118,6 +118,8 @@ services:
   airflow-webserver:
     <<: *airflow-common
     command: webserver
+    volumes:
+      - ./:/opt/airflow/
     ports:
       - "8080:8080"
     healthcheck:
@@ -135,6 +137,8 @@ services:
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
+    volumes:
+      - ./:/opt/airflow/
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
@@ -150,8 +154,10 @@ services:
   airflow-worker:
     <<: *airflow-common
     command: celery worker
+    user: "0:0"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/opt/airflow/
     healthcheck:
       # yamllint disable rule:line-length
       test:

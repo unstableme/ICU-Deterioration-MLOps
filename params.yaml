@@ -27,7 +27,7 @@ model:
 
 training:
   num_epochs: 5
-  learning_rate: 0.0008
+  learning_rate: 0.0006
   weight_decay: 1e-4
 
 artifacts:

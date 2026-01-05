@@ -2,13 +2,14 @@ from airflow import DAG
 from airflow.providers.docker.operators.docker import DockerOperator
 from datetime import datetime
 from pathlib import Path
+from docker.types import Mount
 
 default_args = {
     'owner': 'airflow',
-    'retries': 1,
+    'retries': 0,
 }
 
-PROJECT_ROOT = Path(__file__).parents[2]
+PROJECT_ROOT = Path("/workspaces/ICU-Deterioration-MLOps")
 
 with DAG(
     dag_id='icu_deterioration_training_pipeline',
@@ -24,28 +25,30 @@ with DAG(
         task_id='preprocess_icu_deterioration_data',
         image='unstableme02/icu-deterioration-mlops:latest', 
         api_version='auto',
-        auto_remove="force", #newer version requires True
-        command='dvc repro data_preprocessing',
+        auto_remove="force",
+        command="bash -c 'dvc pull && dvc repro data_preprocessing'",
         docker_url='unix://var/run/docker.sock',
         network_mode='bridge',
         working_dir='/app',
+        mount_tmp_dir=False,
         mounts=[
-            f"{PROJECT_ROOT}:/app",
-            f"{PROJECT_ROOT}/.dvc/cache:/app/.dvc/cache"]
+            Mount(source=str(PROJECT_ROOT), target="/app", type="bind"),
+        ]
     )
 
     train_model = DockerOperator(
         task_id='train_icu_deterioration_model',
         image='unstableme02/icu-deterioration-mlops:latest',
         api_version='auto',
-        auto_remove="force", #True in newer version
-        command='dvc repro train',
+        auto_remove="force",
+        command="bash -c 'dvc pull && dvc repro train'",
         docker_url='unix://var/run/docker.sock',
         network_mode='bridge',
         working_dir='/app',
+        mount_tmp_dir=False,
         mounts=[
-            f"{PROJECT_ROOT}:/app",
-            f"{PROJECT_ROOT}/.dvc/cache:/app/.dvc/cache"]
+            Mount(source=str(PROJECT_ROOT), target="/app", type="bind"),
+        ]
     )
 
     data_preprocess >> train_model
