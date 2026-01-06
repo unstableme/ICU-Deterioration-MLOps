@@ -214,8 +214,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-/artifacts
 airflow/airflow.cfg
 airflow/airflow-webserver.pid
 airflow/logs/
 airflow/webserver_config.py
+/artifacts
