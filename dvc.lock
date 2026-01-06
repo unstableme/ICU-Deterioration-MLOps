@@ -8,10 +8,6 @@ stages:
       md5: d9bdca6deb3b606acfb23e2b9aaa500a.dir
       size: 83182213
       nfiles: 12003
-    - path: params.yaml
-      hash: md5
-      md5: 45c9c0a988e328523a5e11fc4c312a05
-      size: 505
     - path: src/data/data_ingestion.py
       hash: md5
       md5: 61c380510c7e347ebd96388c13af679f

@@ -24,7 +24,8 @@ def main():
     trainer = Trainer(train_loaders, val_loaders, test_loaders)
     
     run_name = f"CNN_GRU_Training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    with mlflow.start_run(run_name=run_name):
+    with mlflow.start_run(run_name=run_name) as run:
+        run_id = run.info.run_id
         logger.info("MLflow run started for CNN_GRU_Training")
     
         mlflow.set_tags({
@@ -120,7 +121,8 @@ def main():
                     logger.info("Current model outperformed the staged model. Proceeding with registration & staging.")
 
             if should_register:
-                model_uri = f"runs:/{mlflow.active_run().info.run_id}/mlflow_organized_model"
+                mlflow.end_run()  # End current run before registering-yes mlflow allows this and ensures artifacts are fully persisted
+                model_uri = f"runs:/{run_id}/mlflow_organized_model"
                 result = mlflow.register_model(model_uri, MODEL_NAME)
                 logger.info(f"Model registered under the name: {MODEL_NAME}")
 
