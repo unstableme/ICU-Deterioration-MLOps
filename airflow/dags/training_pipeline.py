@@ -3,13 +3,19 @@ from airflow.providers.docker.operators.docker import DockerOperator
 from datetime import datetime
 from pathlib import Path
 from docker.types import Mount
+from airflow.models import Variable
 
 default_args = {
     'owner': 'airflow',
     'retries': 0,
 }
 
-PROJECT_ROOT = Path("/workspaces/ICU-Deterioration-MLOps")
+PROJECT_ROOT = "/workspaces/ICU-Deterioration-MLOps"
+
+dagshub_env = {
+    "DAGSHUB_USER": Variable.get("DAGSHUB_USER"),
+    "DAGSHUB_TOKEN": Variable.get("DAGSHUB_TOKEN"),
+}
 
 with DAG(
     dag_id='icu_deterioration_training_pipeline',
@@ -26,13 +32,20 @@ with DAG(
         image='unstableme02/icu-deterioration-mlops:latest', 
         api_version='auto',
         auto_remove="force",
-        command="bash -c 'dvc pull && dvc repro data_preprocessing'",
+        command="""bash -c '
+            dvc remote modify origin --local auth basic && \
+            dvc remote modify origin --local user $DAGSHUB_USER && \
+            dvc remote modify origin --local password $DAGSHUB_TOKEN && \
+            dvc pull data/processed.dvc && \
+            echo "Successfully pulled processed data from DagsHub"
+        '""",
         docker_url='unix://var/run/docker.sock',
         network_mode='bridge',
         working_dir='/app',
         mount_tmp_dir=False,
+        environment=dagshub_env,
         mounts=[
-            Mount(source=str(PROJECT_ROOT), target="/app", type="bind"),
+            Mount(source=PROJECT_ROOT, target="/app", type="bind"),
         ]
     )
 
@@ -41,13 +54,21 @@ with DAG(
         image='unstableme02/icu-deterioration-mlops:latest',
         api_version='auto',
         auto_remove="force",
-        command="bash -c 'dvc pull && dvc repro train'",
+        command="""bash -c '
+            dvc remote modify origin --local auth basic && \
+            dvc remote modify origin --local user $DAGSHUB_USER && \
+            dvc remote modify origin --local password $DAGSHUB_TOKEN && \
+            dvc pull && \
+            dvc repro train && \
+            dvc push
+        '""",
         docker_url='unix://var/run/docker.sock',
         network_mode='bridge',
         working_dir='/app',
         mount_tmp_dir=False,
+        environment=dagshub_env,
         mounts=[
-            Mount(source=str(PROJECT_ROOT), target="/app", type="bind"),
+            Mount(source=PROJECT_ROOT, target="/app", type="bind"),
         ]
     )
 

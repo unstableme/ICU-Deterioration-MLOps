@@ -20,15 +20,15 @@ class ICUDataIngestion:
             self.sets = {
                 'a': {
                     'folder': os.path.join(self.raw_data_dir, 'set-a'),
-                    'outcomes_file': os.path.join(self.raw_data_dir, 'outcomes-a.txt')
+                    'outcomes_file': os.path.join(self.raw_data_dir, 'Outcomes-a.txt')
                 },
                 'b': {
                     'folder': os.path.join(self.raw_data_dir, 'set-b'),
-                    'outcomes_file': os.path.join(self.raw_data_dir, 'outcomes-b.txt')
+                    'outcomes_file': os.path.join(self.raw_data_dir, 'Outcomes-b.txt')
                 },
                 'c': {
                     'folder': os.path.join(self.raw_data_dir, 'set-c'),
-                    'outcomes_file': os.path.join(self.raw_data_dir, 'outcomes-c.txt')
+                    'outcomes_file': os.path.join(self.raw_data_dir, 'Outcomes-c.txt')
                 }
             }
             logger.info("Set paths for data ingestion initialized successfully.")
