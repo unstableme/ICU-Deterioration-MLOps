@@ -25,7 +25,7 @@ def main():
     
     run_name = f"CNN_GRU_Training_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     with mlflow.start_run(run_name=run_name) as run:
-        run_id = run.info.run_id
+        current_run_id = run.info.run_id
         logger.info("MLflow run started for CNN_GRU_Training")
     
         mlflow.set_tags({
@@ -91,8 +91,8 @@ def main():
                     if not versions:
                         logger.info("No versions found in 'Staging' stage.")
                         return None
-                    run_id = versions[0].run_id
-                    run = mlflow.get_run(run_id)
+                    staged_run_id = versions[0].run_id
+                    run = mlflow.get_run(staged_run_id)
                     pr_auc = run.data.metrics.get("Test_PR_AUC")
                     roc_auc = run.data.metrics.get("Test_ROC_AUC")
                     return {"PR_AUC": pr_auc, "ROC_AUC": roc_auc}
@@ -122,7 +122,7 @@ def main():
 
             if should_register:
                 mlflow.end_run()  # End current run before registering-yes mlflow allows this and ensures artifacts are fully persisted
-                model_uri = f"runs:/{run_id}/mlflow_organized_model"
+                model_uri = f"runs:/{current_run_id}/mlflow_organized_model"
                 result = mlflow.register_model(model_uri, MODEL_NAME)
                 logger.info(f"Model registered under the name: {MODEL_NAME}")
 
@@ -135,7 +135,8 @@ def main():
                 logger.info(f"Model version {result.version} transitioned to 'Staging' stage.")
             else:
                 logger.info("Model did not meet the criteria for registration.")
-
+        else:
+            logger.info("Model did not meet the initial criteria for registration based on test metrics. so not registering.")
 if __name__ == "__main__":
     try:
         main()
