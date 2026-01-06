@@ -35,16 +35,16 @@ stages:
       nfiles: 3
     - path: src/data/dataloader_for_torch.py
       hash: md5
-      md5: af08f35f4d7adc75ddc0e74f5ab7f8e5
-      size: 2174
+      md5: b645474e1cda293583c7156a8df41ee8
+      size: 2126
     - path: src/model/model_architecture.py
       hash: md5
-      md5: ba251219a98dc2f215918ccefc297136
-      size: 2091
+      md5: 8b7949028c97aa49e884f6ebb0105370
+      size: 2042
     - path: src/model/train_utils.py
       hash: md5
-      md5: dde290875b3f0990f38e26866d9ad81f
-      size: 10562
+      md5: e69ce0ba0827c3a02a480469b2927efd
+      size: 10268
     params:
       params.yaml:
         training.learning_rate: 0.0006
@@ -53,6 +53,6 @@ stages:
     outs:
     - path: artifacts
       hash: md5
-      md5: 5e43a970abd8e66ab2f06dc6e0205653.dir
-      size: 51849
+      md5: 6bec5328603fd3c50694e26777df496f.dir
+      size: 51440
       nfiles: 1
