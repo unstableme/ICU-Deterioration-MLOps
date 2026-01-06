@@ -5,9 +5,27 @@ from src.logger import get_logger
 import mlflow
 from mlflow.tracking import MlflowClient
 from datetime import datetime
+import os 
 
-import dagshub
-dagshub.init(repo_owner='unstableme', repo_name='ICU-Deterioration-MLOps', mlflow=True)
+#import dagshub
+# dagshub.init(repo_owner='unstableme',
+#              repo_name='ICU-Deterioration-MLOps',
+#              mlflow=True
+#             )
+
+dagshub_token = os.environ.get("DAGSHUB_TOKEN")
+dagshub_user = os.environ.get("DAGSHUB_USER")
+
+print(f"DAGSHUB_USER inside container: {dagshub_user}")
+print(f"DAGSHUB_TOKEN present: {'Yes' if dagshub_token else 'No'}")
+
+os.environ["MLFLOW_TRACKING_URI"] = "https://dagshub.com/unstableme/ICU-Deterioration-MLOps.mlflow"
+os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_user or ""
+os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token or ""
+
+if not dagshub_token or not dagshub_user:
+    raise ValueError("DAGSHUB_TOKEN and DAGSHUB_USER environment variables must be set")
+
 
 logger = get_logger(__name__, log_file='Entrypoints_train.log')
 PARAMS = load_params()
@@ -15,8 +33,8 @@ client = MlflowClient()
 
 def main():
     """Main function to orchestrate model training. """
-    # mlflow.set_tracking_uri("https://dagshub.com/unstableme/ICU-Deterioration-MLOps.mlflow")
-    # dont need this line because of above dagshub init mlflow true line
+    mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI'])
+    logger.info(f"MLflow Tracking URI set to: {os.environ['MLFLOW_TRACKING_URI']}") 
     
     mlflow.set_experiment("ICU_Deterioration_Prediction_CNN_GRU")
 
@@ -121,7 +139,6 @@ def main():
                     logger.info("Current model outperformed the staged model. Proceeding with registration & staging.")
 
             if should_register:
-                mlflow.end_run()  # End current run before registering-yes mlflow allows this and ensures artifacts are fully persisted
                 model_uri = f"runs:/{current_run_id}/mlflow_organized_model"
                 result = mlflow.register_model(model_uri, MODEL_NAME)
                 logger.info(f"Model registered under the name: {MODEL_NAME}")

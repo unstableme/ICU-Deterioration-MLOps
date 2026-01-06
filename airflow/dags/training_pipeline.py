@@ -36,8 +36,8 @@ with DAG(
             dvc remote modify origin --local auth basic && \
             dvc remote modify origin --local user $DAGSHUB_USER && \
             dvc remote modify origin --local password $DAGSHUB_TOKEN && \
-            dvc pull data/processed.dvc && \
-            echo "Successfully pulled processed data from DagsHub"
+            dvc pull && \
+            echo "Successfully pulled data from DagsHub"
         '""",
         docker_url='unix://var/run/docker.sock',
         network_mode='bridge',
@@ -58,8 +58,7 @@ with DAG(
             dvc remote modify origin --local auth basic && \
             dvc remote modify origin --local user $DAGSHUB_USER && \
             dvc remote modify origin --local password $DAGSHUB_TOKEN && \
-            dvc pull && \
-            dvc repro train && \
+            dvc repro --single-item train && \
             dvc push
         '""",
         docker_url='unix://var/run/docker.sock',
