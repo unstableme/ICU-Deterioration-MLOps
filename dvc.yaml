@@ -2,24 +2,24 @@ stages:
   data_preprocessing:
     cmd: python -m src.entrypoints.preprocess
     deps:
-      - src/data/data_ingestion.py
-      - src/data/data_preprocessing.py
-      - data/raw/
+    - src/data/data_ingestion.py
+    - src/data/data_preprocessing.py
+    - data/raw/
     params:
-      - data.raw_data_dir
+    - data.raw_data_dir
     outs:
-      - data/processed/
-    
+    - data/processed/
+
   train:
     cmd: python -m src.entrypoints.train
     deps:
-      - src/model/train_utils.py
-      - src/model/model_architecture.py
-      - src/data/dataloader_for_torch.py
-      - data/processed/
+    - data/processed
+    - src/data/dataloader_for_torch.py
+    - src/model/model_architecture.py
+    - src/model/train_utils.py
     params:
-      - training.learning_rate
-      - training.weight_decay
-      - training.num_epochs
+    - training.learning_rate
+    - training.num_epochs
+    - training.weight_decay
     outs:
-      - artifacts
+    - artifacts
