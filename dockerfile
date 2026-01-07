@@ -25,6 +25,5 @@ COPY src/ ./src/
 COPY dvc.yaml .
 COPY params.yaml .
 COPY .dvc/ ./.dvc/
-COPY params.yaml .
 
 # No CMD — Airflow overrides it

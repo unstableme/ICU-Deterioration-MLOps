@@ -35,7 +35,7 @@ artifacts:
 
 mlflow_model_registration:
   mlflow_pr_auc_threshold: 0.15
-  mlflow_recall_threshold: 0.90
+  mlflow_recall_threshold: 0.85
   mlflow_roc_auc_threshold: 0.50
 
 
