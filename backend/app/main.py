@@ -12,7 +12,8 @@ sys.path.append(str(ROOT_DIR))
 
 app = FastAPI(title="ICU Deterioration Prediction API")
 
-DATA_PATH = Path(os.getenv("DATA_PATH", ROOT_DIR / "data" / "processed" / "set_c_processed.pkl"))
+#DATA_PATH = Path(os.getenv("DATA_PATH", ROOT_DIR / "data" / "processed" / "set_c_processed.pkl"))
+DATA_PATH = "https://dagshub.com/unstableme/ICU-Deterioration-MLOps/src/main/data/processed/set_c_processed.pkl"
 model = ICUModel(data_path=DATA_PATH)
 
 @app.get("/")
