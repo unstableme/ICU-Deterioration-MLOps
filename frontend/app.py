@@ -1,10 +1,10 @@
 import streamlit as st
 import requests
 import pandas as pd
-
+import os
 
 st.set_page_config(page_title="ICU Deterioration Simulator", layout="wide")
-BACKEND_URL = "http://localhost:8000"
+BACKEND_URL = os.getenv("BACKEND_URL", "http://backend:8000")
 WINDOW_SIZE = 12
 MAX_HOUR = 48
 vitals_name = ['ALP', 'ALT', 'AST', 'Age', 'Albumin', 'BUN', 'Bilirubin', 'Cholesterol',
