@@ -2,12 +2,22 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+
+COPY backend/requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir torch==2.1.1 torchvision==0.16.1 --index-url https://download.pytorch.org/whl/cpu
 
-COPY . .
+
+# Copying src folder which is used inside model-training code
+COPY src ./src
+
+# Copy backend code into /app/app so that 'app.main' works
+COPY backend/app ./app
+
+# Add /app to PYTHONPATH so Python can find 'src' and 'app' packages
+ENV PYTHONPATH=/app:$PYTHONPATH
 
 EXPOSE 8000
 
