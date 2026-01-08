@@ -91,7 +91,7 @@ def align_the_patients(all_patients, global_columns):
         raise
 
 
-def scale_patient_data(aligned_patients):
+def fit_and_scale_patients_data(aligned_patients):
     """ Scale patient data using StandardScaler fitted on the training data."""
     scaler = StandardScaler()
     try:
@@ -105,10 +105,23 @@ def scale_patient_data(aligned_patients):
             scaled_df = pd.DataFrame(scaler.transform(df), columns=df.columns, index=df.index)
             scaled_patients.append((rid, scaled_df))
         logger.info("Scaled patient data using fitted scaler.")
-        return scaled_patients
+        return scaled_patients, scaler
     except Exception as e:
         logger.exception("Error scaling patient data.")
         raise
+
+def scale_patients_data_with_existing_scaler(aligned_patients, scaler):
+    scaled_patients = []
+    for rid, df in aligned_patients:
+        scaled_df = pd.DataFrame(
+            scaler.transform(df),
+            columns=df.columns,
+            index=df.index
+        )
+        scaled_patients.append((rid, scaled_df))
+
+    return scaled_patients
+
 
 
 def scaled_patients_to_padded_array(scaled_patients):
