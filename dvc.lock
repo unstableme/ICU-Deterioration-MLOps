@@ -14,17 +14,17 @@ stages:
       size: 3093
     - path: src/data/data_preprocessing.py
       hash: md5
-      md5: b32cf85dcd985d52b6ba61d9f37b914a
-      size: 7548
+      md5: 9806061e70175dd9d618285eaf0ba135
+      size: 7928
     params:
       params.yaml:
         data.raw_data_dir: data/raw
     outs:
     - path: data/processed/
       hash: md5
-      md5: 5326cbd939c168a8b31a05c9ab3aa36e.dir
-      size: 792652831
-      nfiles: 3
+      md5: 10f862a9a1c5d9c69c3579d941ddbe40.dir
+      size: 792655001
+      nfiles: 4
   train:
     cmd: python -m src.entrypoints.train
     deps:
