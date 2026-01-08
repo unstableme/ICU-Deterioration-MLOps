@@ -41,14 +41,8 @@ def main():
     
     #save the scaler to later use for two set and also inverse transform for UI
     os.makedirs(save_scaler_here.parent, exist_ok=True)
-    scaler_info = {
-        "scaler": scaler,
-        "columns": global_columns['c'].tolist()
-    }
-
-
     with open(save_scaler_here, "wb") as f:
-        pickle.dump(scaler_info, f)
+        pickle.dump(scaler, f)
 
     scaled_patients['b'] = scale_patients_data_with_existing_scaler(
         aligned_patients['b'], scaler
