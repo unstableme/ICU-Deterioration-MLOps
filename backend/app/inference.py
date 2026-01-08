@@ -2,7 +2,7 @@ import torch
 import pickle
 import mlflow.pytorch 
 from pathlib import Path
-from io import BytesIO
+import requests
 
 mlflow.set_tracking_uri("https://dagshub.com/unstableme/ICU-Deterioration-MLOps.mlflow")
 # PROJECT_ROOT = Path(__file__).resolve().parents[2]  # ICU-Deterioration-MLOps
@@ -24,9 +24,8 @@ class ICUModel():
             with open(data_path, "rb") as f:
                 self.patient_data_dict = pickle.load(f)
 
-        # Load scaler (from URL or local)
-        if scaler_path is None:
-            scaler_path = "https://dagshub.com/unstableme/ICU-Deterioration-MLOps/src/main/data/processed/scaler.pkl"
+        # Load scaler from URL
+        scaler_path = "https://dagshub.com/unstableme/ICU-Deterioration-MLOps/raw/main/data/processed/scaler.pkl"
 
         if str(scaler_path).startswith("http"):
             response = requests.get(scaler_path)
