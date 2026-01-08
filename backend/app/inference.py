@@ -14,13 +14,27 @@ class ICUModel():
             model_uri="models:/CNN_GRU_ICU_Deterioration_Model/7",
             map_location=self.device
         )
-        with open(data_path, 'rb') as f:
-            self.patient_data_dict = pickle.load(f)
 
-        scaler_url = "https://dagshub.com/unstableme/ICU-Deterioration-MLOps/raw/main/data/processed/set_c_processed.pkl"
-        response = requests.get(scaler_url)
-        response.raise_for_status()  # ensure we fail if download fails
-        self.scaler = pickle.load(BytesIO(response.content))
+        # Download patient data if it's a URL: downloading set_c_processed.pkl
+        if str(data_path).startswith("http"):
+            response = requests.get(data_path)
+            response.raise_for_status()
+            self.patient_data_dict = pickle.loads(response.content)
+        else:
+            with open(data_path, "rb") as f:
+                self.patient_data_dict = pickle.load(f)
+
+        # Load scaler (from URL or local)
+        if scaler_path is None:
+            scaler_path = "https://dagshub.com/unstableme/ICU-Deterioration-MLOps/src/main/data/processed/scaler.pkl"
+
+        if str(scaler_path).startswith("http"):
+            response = requests.get(scaler_path)
+            response.raise_for_status()
+            self.scaler = pickle.loads(response.content)
+        else:
+            with open(scaler_path, "rb") as f:
+                self.scaler = pickle.load(f)
 
         self.threshold = threshold
         self.window_size = window_size
