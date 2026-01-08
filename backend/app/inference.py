@@ -2,9 +2,10 @@ import torch
 import pickle
 import mlflow.pytorch 
 from pathlib import Path
+from io import BytesIO
 
 mlflow.set_tracking_uri("https://dagshub.com/unstableme/ICU-Deterioration-MLOps.mlflow")
-PROJECT_ROOT = Path(__file__).resolve().parents[2]  # ICU-Deterioration-MLOps
+# PROJECT_ROOT = Path(__file__).resolve().parents[2]  # ICU-Deterioration-MLOps
 class ICUModel():
     """ICU Deterioration Prediction Model Inference Class"""
     def __init__(self, data_path, window_size=12, threshold=0.49):
@@ -16,8 +17,10 @@ class ICUModel():
         with open(data_path, 'rb') as f:
             self.patient_data_dict = pickle.load(f)
 
-        with open(PROJECT_ROOT / "data/processed/scaler.pkl", "rb") as f:
-            self.scaler = pickle.load(f)
+        scaler_url = "https://dagshub.com/unstableme/ICU-Deterioration-MLOps/raw/main/data/processed/set_c_processed.pkl"
+        response = requests.get(scaler_url)
+        response.raise_for_status()  # ensure we fail if download fails
+        self.scaler = pickle.load(BytesIO(response.content))
 
         self.threshold = threshold
         self.window_size = window_size
