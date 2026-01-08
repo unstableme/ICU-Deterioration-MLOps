@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 class PredictionRequest(BaseModel):
-    patient_id: str
+    record_id: str
     end_hour: int
 
 class PredictionResponse(BaseModel):
