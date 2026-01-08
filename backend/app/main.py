@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from app.inference import ICUModel
 from app.schema import PredictionRequest, PredictionResponse
 import os
+import numpy as np
 import sys
 from pathlib import Path
 
@@ -16,10 +17,23 @@ model = ICUModel(data_path=DATA_PATH)
 
 @app.get("/")
 def read_root():
+    """Root endpoint."""
     return {"message": "Welcome to the ICU Deterioration Prediction API"}
+
+@app.get("/patients")
+def list_patients(sample_size:int=6):
+    """List 6 random patient IDs from the dataset."""
+    all_ids = model.patient_data_dict['record_ids']
+    if sample_size <= len(all_ids):
+        sampled_ids = all_ids
+    else:
+        sampled_ids = list(np.random.choice(all_ids, size=sample_size, replace=False))
+    return {"patient_ids": sampled_ids}
+    
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict(request: PredictionRequest):
+    """Make prediction for a given patient and end hour."""
     try:
         prediction = model.predict(record_id=request.record_id, end_hour=request.end_hour)
         return PredictionResponse(**prediction)
