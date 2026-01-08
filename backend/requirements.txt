@@ -1,4 +1,6 @@
 fastapi
 uvicorn 
-torch
-pickle
+
+mlflow[pytorch]
+pydantic
+numpy
