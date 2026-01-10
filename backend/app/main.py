@@ -6,6 +6,8 @@ import os
 import numpy as np
 import sys
 from pathlib import Path
+from app.metrics import REQUEST_COUNT, REQUEST_LATENCY, ERROR_COUNT, RISK_SCORE_DIST
+import time 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]  # ICU-Deterioration-MLOps
 sys.path.append(str(ROOT_DIR))
@@ -35,11 +37,21 @@ def list_patients(sample_size:int=6):
 @app.post("/predict", response_model=PredictionResponse)
 def predict(request: PredictionRequest):
     """Make prediction for a given patient and end hour."""
+    start = time.time()
+    REQUEST_COUNT.labels(endpoint="/predict", method="POST").inc()
+
     try:
-        prediction = model.predict(record_id=request.record_id, end_hour=request.end_hour)
+        prediction = model.predict(
+            record_id=request.record_id,
+            end_hour=request.end_hour
+            )
+        RISK_SCORE_DIST.observe(prediction["risk_score"])
         return PredictionResponse(**prediction)
     except ValueError as e:
+        ERROR_COUNT.labels(endpoint="/predict").inc()
         raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        REQUEST_LATENCY.labels(endpoint="/predict").observe(time.time() - start)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
