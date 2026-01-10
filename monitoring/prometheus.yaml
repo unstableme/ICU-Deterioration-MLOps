@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "icu-backend-metrics"
+    metrics_path: /metrics
+    scheme: http
+    
+    authorization:
+      type: Bearer
+      credentials: ${METRICS_TOKEN}
+    
+    static_configs:
+      - targets:
+          - host.docker.internal:8000
+  
