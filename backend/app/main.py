@@ -1,16 +1,20 @@
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from app.inference import ICUModel
 from app.schema import PredictionRequest, PredictionResponse
-import os
 import numpy as np
 import sys
 from pathlib import Path
 from app.metrics import REQUEST_COUNT, REQUEST_LATENCY, ERROR_COUNT, RISK_SCORE_DIST
 import time 
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from fastapi.responses import Response
+import os
 
 ROOT_DIR = Path(__file__).resolve().parents[2]  # ICU-Deterioration-MLOps
 sys.path.append(str(ROOT_DIR))
+
+METRICS_TOKEN = os.getenv("METRICS_TOKEN")
 
 app = FastAPI(title="ICU Deterioration Prediction API")
 
@@ -52,6 +56,18 @@ def predict(request: PredictionRequest):
         raise HTTPException(status_code=400, detail=str(e))
     finally:
         REQUEST_LATENCY.labels(endpoint="/predict").observe(time.time() - start)
+
+@app.get("/metrics")
+def metrics(x_metrics_token:str = Header(None)):
+    if x_metrics_token != METRICS_TOKEN:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    
+    return Response(
+        generate_latest(),
+        media_type = CONTENT_TYPE_LATEST
+    )
+
+    
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
