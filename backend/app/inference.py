@@ -8,10 +8,12 @@ mlflow.set_tracking_uri("https://dagshub.com/unstableme/ICU-Deterioration-MLOps.
 # PROJECT_ROOT = Path(__file__).resolve().parents[2]  # ICU-Deterioration-MLOps
 class ICUModel():
     """ICU Deterioration Prediction Model Inference Class"""
+    MODEL_NAME = "CNN_GRU_ICU_Deterioration_Model"
     def __init__(self, data_path, window_size=12, threshold=0.49):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model_version = self._get_model_version()
         self.model = mlflow.pytorch.load_model(
-            model_uri="models:/CNN_GRU_ICU_Deterioration_Model/7",
+            model_uri = f"models:/{self.MODEL_NAME}/{self.model_version}",
             map_location=self.device
         )
 
@@ -38,6 +40,17 @@ class ICUModel():
         self.threshold = threshold
         self.window_size = window_size
         self.model.eval()
+
+    @classmethod
+    def _get_model_version(cls):
+        """Class method to get the latest version of registered model"""
+        client = mlflow.MlflowClient()
+        latest_version = client.get_latest_versions(cls.MODEL_NAME, stages=["Production"])
+        if not latest_version:
+            latest_version = client.get_latest_versions(cls.MODEL_NAME, stages=["None"])
+        if not latest_version:
+            raise ValueError(f"No model version found for '{cls.MODEL_NAME}' ")
+        return latest_version[0].version
     
     def get_patient_data(self, record_id):
         """Retrieve patient time-series data by RecordID."""
