@@ -6,9 +6,6 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    volumes:
-      - ./params.yaml:/app/params.yaml
-      - ./dvc.yaml:/app/dvc.yaml
     ports:
       - "8000:8000"
     restart: unless-stopped
