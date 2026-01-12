@@ -37,7 +37,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./backend
-          file: Dockerfile
+          file: ./backend/Dockerfile
           push: true
           tags: unstableme02/icu-deterioration-backend:${{ steps.vars.outputs.TAG }}
         
