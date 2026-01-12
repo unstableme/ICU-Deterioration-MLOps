@@ -66,7 +66,7 @@ def metrics(authorization:str = Header(None)):
         raise HTTPException(status_code=403, detail="Forbidden")
     
     token = authorization.replace("Bearer ", "")
-    if x_metrics_token != METRICS_TOKEN:
+    if token != METRICS_TOKEN:
         raise HTTPException(status_code=403, detail="Forbidden")
     
     return Response(
