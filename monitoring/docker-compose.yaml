@@ -7,6 +7,8 @@ services:
     volumes: 
       - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
       - ./token:/etc/prometheus/token:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     environment:
       - METRICS_TOKEN=${METRICS_TOKEN}
     ports:
