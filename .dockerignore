@@ -7,12 +7,15 @@ artifacts/
 airflow/
 
 frontend/
+backend/
+
+docker-compose.yaml
+
+monitoring/
 
 logs/
 
 notebooks/
-
-docker-compose.yaml
 
 .git 
 .gitignore
