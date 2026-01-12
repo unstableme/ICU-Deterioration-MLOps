@@ -61,7 +61,7 @@ def predict(request: PredictionRequest):
 def metrics(authorization: str = Header(None), token: str = None):
     if token:
         if token != METRICS_TOKEN:
-        raise HTTPException(status_code=403, detail="Forbidden: Invalid Token")
+            raise HTTPException(status_code=403, detail="Forbidden: Invalid Token")
 
     elif authorization:
         if not authorization.startswith("Bearer "):
@@ -70,7 +70,7 @@ def metrics(authorization: str = Header(None), token: str = None):
         extracted_token = authorization.replace("Bearer ", "", 1)
         if extracted_token != METRICS_TOKEN:
             raise HTTPException(status_code=403, detail="Forbidden: Invalid token")
-            
+
     else:
         raise HTTPException(status_code=403, detail="Forbidden: Missing authorization")
     
