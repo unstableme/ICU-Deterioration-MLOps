@@ -18,6 +18,8 @@ COPY backend/app ./app
 # Add /app to PYTHONPATH so Python can find 'src' and 'app' packages
 ENV PYTHONPATH=/app:$PYTHONPATH
 
+COPY params.yaml ./params.yaml
+
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
