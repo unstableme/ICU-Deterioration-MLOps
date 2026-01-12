@@ -58,16 +58,22 @@ def predict(request: PredictionRequest):
         REQUEST_LATENCY.labels(endpoint="/predict").observe(time.time() - start)
 
 @app.get("/metrics")
-def metrics(authorization:str = Header(None)):
-    if not authorization:
-        raise HTTPException(status_code=403, detail="Forbidden: Missing authorization header")
-        
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=403, detail="Forbidden:Invalid authorization format")
+def metrics(authorization: str = Header(None), token: str = None):
+    if token:
+        if token != METRICS_TOKEN:
+        raise HTTPException(status_code=403, detail="Forbidden: Invalid Token")
+
+    elif authorization:
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=403, detail="Forbidden:Invalid authorization format")
+
+        extracted_token = authorization.replace("Bearer ", "", 1)
+        if extracted_token != METRICS_TOKEN:
+            raise HTTPException(status_code=403, detail="Forbidden: Invalid token")
+            
+    else:
+        raise HTTPException(status_code=403, detail="Forbidden: Missing authorization")
     
-    token = authorization.replace("Bearer ", "", 1)
-    if token != METRICS_TOKEN:
-        raise HTTPException(status_code=403, detail="Forbidden")
     
     return Response(
         generate_latest(),
