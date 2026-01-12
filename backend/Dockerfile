@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt \
@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copying src folder which is used inside model-training code
 COPY src ./src
 
-COPY app ./app
+COPY backend/app ./app
 
 # Add /app to PYTHONPATH so Python can find 'src' and 'app' packages
 ENV PYTHONPATH=/app:$PYTHONPATH

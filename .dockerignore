@@ -7,9 +7,7 @@ artifacts/
 airflow/
 
 frontend/
-backend/
 
-docker-compose.yaml
 
 monitoring/
 
