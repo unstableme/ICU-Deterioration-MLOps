@@ -58,7 +58,14 @@ def predict(request: PredictionRequest):
         REQUEST_LATENCY.labels(endpoint="/predict").observe(time.time() - start)
 
 @app.get("/metrics")
-def metrics(x_metrics_token:str = Header(None)):
+def metrics(authorization:str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=403, detail="Forbidden")
+        
+    if not authorization.starts_with("Bearer "):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    
+    token = authorization.replace("Bearer ", "")
     if x_metrics_token != METRICS_TOKEN:
         raise HTTPException(status_code=403, detail="Forbidden")
     
