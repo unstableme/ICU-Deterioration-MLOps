@@ -7,7 +7,6 @@ artifacts/
 airflow/
 
 frontend/
-backend/
 
 logs/
 

@@ -8,6 +8,8 @@ data/processed
 
 mlflow.db
 
+monitoring/token
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
