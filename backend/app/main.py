@@ -60,12 +60,12 @@ def predict(request: PredictionRequest):
 @app.get("/metrics")
 def metrics(authorization:str = Header(None)):
     if not authorization:
-        raise HTTPException(status_code=403, detail="Forbidden")
+        raise HTTPException(status_code=403, detail="Forbidden: Missing authorization header")
         
-    if not authorization.starts_with("Bearer "):
-        raise HTTPException(status_code=403, detail="Forbidden")
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=403, detail="Forbidden:Invalid authorization format")
     
-    token = authorization.replace("Bearer ", "")
+    token = authorization.replace("Bearer ", "", 1)
     if token != METRICS_TOKEN:
         raise HTTPException(status_code=403, detail="Forbidden")
     
