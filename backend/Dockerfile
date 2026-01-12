@@ -16,6 +16,9 @@ COPY src ./src
 # Copy backend code into /app/app so that 'app.main' works
 COPY backend/app ./app
 
+COPY params.yaml /app/params.yaml
+COPY dvc.yaml /app/dvc.yaml
+
 # Add /app to PYTHONPATH so Python can find 'src' and 'app' packages
 ENV PYTHONPATH=/app:$PYTHONPATH
 
