@@ -10,7 +10,7 @@ This project is intentionally designed to demonstrate **clinical ML reasoning**,
 
 Early detection of patient deterioration in Intensive Care Units (ICUs) is critical. Delayed intervention can significantly increase mortality, length of stay, and healthcare costs.
 
-This system mimics real-world **clinical decision-support systems (CDSS)** by:
+This system mimics real-world clinical decision-support systems by:
 
 * Operating on **time-series physiological signals**
 * Emphasizing **recall (sensitivity)** over raw accuracy
@@ -137,26 +137,21 @@ The architecture balances **performance** and **computational feasibility**.
                       │
           ┌───────────┴────────────┐
           ▼                        ▼
-┌──────────────────┐    ┌──────────────────────┐
-│ FastAPI Backend  │◄───│   ML Inference Image │
-│  /predict        │    │   (Loaded from       │
-│  /metrics        │    │    MLflow Registry)  │
-└──────────┬───────┘    └──────────────────────┘
-           │
-           ▼
-┌────────────────────────────┐
-│        Frontend UI         │
-│  (Risk Score Visualization)│
-└──────────┬─────────────────┘
-           │
-           ▼
-┌──────────────────────────────────────────────┐
-│     Prometheus → Grafana                     │
-│  - Request Rate                              │
-│  - Latency                                   │
-│  - Error Rate                                │
-│  - Risk Score Distribution                   │
-└──────────────────────────────────────────────┘ ``` 
+┌──────────────────────┐    ┌──────────────────┐
+│   ML Inference Image │    │ FastAPI Backend  │
+│   (Loaded from       │───►│  /predict        │
+│    MLflow Registry)  │    │  /metrics        │
+└──────────────────────┘    └──────────┬───────┘
+                                       │
+                        ┌──────────────┴───────────────┐
+                        ▼                              ▼
+            ┌────────────────────────────┐   ┌──────────────────────────────────────────────┐
+            │        Frontend UI         │   │     Prometheus → Grafana                     │
+            │  (Risk Score Visualization)│   │  - Request Rate                              │
+            └────────────────────────────┘   │  - Latency                                   │
+                                             │  - Error Rate                                │
+                                             │  - Risk Score Distribution                   │
+                                             └──────────────────────────────────────────────┘
 ```
 ---
 
@@ -208,13 +203,6 @@ A lightweight **FastAPI** service provides:
 - Error rate
 - Risk score distribution (histogram)
 
-### Why Monitoring Matters
-
-Monitoring answers questions like:
-- Is the model being used?
-- Is latency acceptable?
-- Are predictions drifting toward extreme values?
-
 Prometheus acts as a **metrics collector**, Grafana as the **visual layer**.
 
 ---
@@ -245,13 +233,6 @@ This step shows readiness for **real-world deployment**, where drift is unavoida
   - Inference service
   - Monitoring stack
 
-- `docker-compose` orchestrates:
-  - ML API
-  - Prometheus
-  - Grafana
-
-This ensures **environment reproducibility**.
-
 ---
 
 ## 🔁 CI/CD (GitHub Actions)
@@ -266,9 +247,6 @@ This ensures **environment reproducibility**.
 
 - API redeployment on main branch updates
 - Model lifecycle handled via MLflow (not CI)
-
-**Key Insight**:
-> CI/CD deploys code, not models. Model governance is handled by MLflow + pipeline logic.
 
 ---
 
