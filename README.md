@@ -43,7 +43,7 @@ Therefore:
 
 ## 📊 Dataset
 
-* ICU time-series vitals (PhysioNet-style structure) of total 12k data only aroun 15% were from positive class (highly imbalanced dataset).
+* ICU time-series vitals (PhysioNet-style structure) of total 12k data only around 15% were from positive class (highly imbalanced dataset).
 * Features include:
 
   * Heart Rate
@@ -51,13 +51,9 @@ Therefore:
   * Respiratory Rate
   * SpO₂
   * Other physiological indicators
+  
+* Set A is used for training, Set B is used for validation, and Set C is used for testing.  
 
-For data-drift analysis, data is split into:
-
-* **Reference dataset** 
-* **Current dataset** 
-
----
 
 ## 🧠 Model Architecture
 
@@ -77,91 +73,93 @@ The architecture balances **performance** and **computational feasibility**.
 
 ```
                 ┌────────────────────────────┐
-                │      Raw ICU Data           │
-                │   (PhysioNet-style)         │
+                │      Raw ICU Data          │
+                │   (PhysioNet-style)        │
                 └─────────────┬──────────────┘
                               │
                               ▼
                 ┌────────────────────────────┐
-                │   Data Processing Pipeline  │
-                │  (Cleaning, Windowing,      │
-                │   Feature Engineering)      │
+                │   Data Processing Pipeline │
+                │  (Cleaning, Windowing,     │
+                │   Feature Engineering)     │
                 └─────────────┬──────────────┘
                               │
           ┌───────────────────┴───────────────────┐
           │                                       │
           ▼                                       ▼
 ┌──────────────────────┐               ┌──────────────────────┐
-│  DVC (Data & Artifacts│               │ Evidently AI (Optional│
-│  Versioning)          │               │ Drift Analysis)       │
-│  - raw data           │               │ Reference vs Current  │
-│  - processed data     │               │ HTML Report           │
+│  DVC (Data & Artifact│               │ Evidently AI (Drift  │
+│  Versioning)         │               │ Analysis)            │
+│  - raw data          │               │ Reference vs Current │
+│  - processed data    │               │ HTML Report          │
 └───────────┬──────────┘               └──────────────────────┘
             │
             ▼
 ┌──────────────────────────────────────────────┐
-│          Training & Evaluation Pipeline        │
-│      (CNN + GRU, PyTorch)                      │
-│                                                │
-│  Metrics: Recall, Precision, PR-AUC, ROC-AUC  │
+│          Training & Evaluation Pipeline      │
+│      (CNN + GRU, PyTorch)                    │
+│                                              │
+│  Metrics: Recall, Precision, PR-AUC, ROC-AUC │
 └───────────────┬──────────────────────────────┘
                 │
                 ▼
 ┌──────────────────────────────────────────────┐
-│              MLflow                            │
-│  - Experiment Tracking                         │
-│  - Metrics & Artifacts                         │
-│  - Model Registry (Conditional Promotion)     │
+│              MLflow                          │
+│  - Experiment Tracking                       │
+│  - Metrics & Artifacts                       │
+│  - Model Registry (Conditional Promotion)    │
 └───────────────┬──────────────────────────────┘
                 │
                 ▼
 ┌──────────────────────────────────────────────┐
-│              Airflow                           │
-│  Orchestrates:                                 │
-│  - DVC Repro                                   │
-│  - Training                                    │
-│  - Evaluation                                  │
-│  - Registry Decision                           │
+│              Airflow                         │
+│  Orchestrates:                               │
+│  - DVC Repro                                 │
+│  - Training                                  │
+│  - Evaluation                                │
+│  - Registry Decision                         │
 └───────────────┬──────────────────────────────┘
                 │
                 ▼
         ┌────────────────────────────┐
-        │   Docker Images Built via   │
-        │   CI (GitHub Actions)       │
-        │                              │
-        │  - ML Training Image        │
-        │  - FastAPI Backend Image    │
-        │  - Frontend Image           │
+        │   Docker Images Built via  │
+        │   CI (GitHub Actions)      │
+        │                            │
+        │  - ML Training Image       │
+        │  - FastAPI Backend Image   │
+        │  - Frontend Image          │
         └─────────────┬──────────────┘
                       │
                       ▼
               ┌──────────────────┐
-              │   Docker Hub      │
+              │   Docker Hub     │
               └───────┬──────────┘
                       │
           ┌───────────┴────────────┐
           ▼                        ▼
 ┌──────────────────┐    ┌──────────────────────┐
-│ FastAPI Backend  │◄───│   ML Inference Image  │
-│  /predict        │    │   (Loaded from        │
-│  /metrics        │    │    MLflow Registry)   │
+│ FastAPI Backend  │◄───│   ML Inference Image │
+│  /predict        │    │   (Loaded from       │
+│  /metrics        │    │    MLflow Registry)  │
 └──────────┬───────┘    └──────────────────────┘
            │
            ▼
 ┌────────────────────────────┐
-│        Frontend UI          │
-│  (Risk Score Visualization) │
+│        Frontend UI         │
+│  (Risk Score Visualization)│
 └──────────┬─────────────────┘
            │
            ▼
 ┌──────────────────────────────────────────────┐
-│     Prometheus → Grafana                      │
-│  - Request Rate                               │
+│     Prometheus → Grafana                     │
+│  - Request Rate                              │
 │  - Latency                                   │
 │  - Error Rate                                │
 │  - Risk Score Distribution                   │
-└──────────────────────────────────────────────┘
+└──────────────────────────────────────────────┘ ``` 
+```
 ---
+
 
 ## 🧪 Training & Experiment Tracking
 
@@ -190,8 +188,6 @@ Apache Airflow is used to orchestrate the ML pipeline:
 Runs can be:
 - Triggered manually (current setup)
 - Scheduled (e.g., daily retraining)
-
-Airflow is treated as a **pipeline controller**, not a deployment tool.
 
 ---
 
