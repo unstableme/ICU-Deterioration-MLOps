@@ -13,11 +13,12 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copying src folder which is used inside model-training code
 COPY src ./src
 
-# Copy backend code into /app/app so that 'app.main' works
 COPY backend/app ./app
 
 # Add /app to PYTHONPATH so Python can find 'src' and 'app' packages
 ENV PYTHONPATH=/app:$PYTHONPATH
+
+COPY params.yaml ./params.yaml
 
 EXPOSE 8000
 

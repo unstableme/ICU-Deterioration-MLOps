@@ -10,8 +10,7 @@ on:
 
 jobs:
   build-backend:
-    runs-on: 
-      -ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -31,14 +30,14 @@ jobs:
           if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
             echo "TAG=latest" >> $GITHUB_OUTPUT
           else
-            echo "TAG=dev-${{GITHUB_SHA::5}}" >> $GITHUB_OUTPUT
+            echo "TAG=dev-${GITHUB_SHA::5}" >> $GITHUB_OUTPUT
           fi
       
       - name: Build Backend Image
         uses: docker/build-push-action@v6
         with:
-          context: ./backend
-          file: Dockerfile
+          context: .
+          file: ./backend/Dockerfile
           push: true
           tags: unstableme02/icu-deterioration-backend:${{ steps.vars.outputs.TAG }}
         

@@ -5,10 +5,7 @@ services:
     image: icu-deterioration-backend
     build:
       context: .
-      dockerfile: backend/Dockerfile
-    volumes:
-      - ./params.yaml:/app/params.yaml
-      - ./dvc.yaml:/app/dvc.yaml
+      dockerfile: ./backend/Dockerfile
     ports:
       - "8000:8000"
     restart: unless-stopped
@@ -19,7 +16,7 @@ services:
     image: icu-deterioration-frontend
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: ./frontend/Dockerfile
     ports:
       - "8501:8501"
     depends_on: 

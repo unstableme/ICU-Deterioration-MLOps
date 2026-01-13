@@ -4,3 +4,5 @@ uvicorn
 mlflow[pytorch]
 pydantic
 numpy
+
+prometheus-client
