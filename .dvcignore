@@ -2,6 +2,15 @@
 # the performance. Learn more at
 # https://dvc.org/doc/user-guide/dvcignore
 
+myvenv/
+.venv/
 
 src/
+airflow/
 notebooks/
+frontend/
+backend/
+reports/
+monitoring/
+.github/workflows/**
+some_snaps_from_project/

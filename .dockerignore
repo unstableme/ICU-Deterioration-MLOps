@@ -8,12 +8,17 @@ airflow/
 
 frontend/
 
+drift/
 
 monitoring/
+
+reports/
 
 logs/
 
 notebooks/
+
+some_snaps_from_project/
 
 .git 
 .gitignore
