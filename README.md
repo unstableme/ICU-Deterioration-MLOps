@@ -1,264 +1,285 @@
-# ICU Deterioration Early-Warning System (MLOps)
+# 🏥 ICU Patient Deterioration Early-Warning System
 
-## 📌 Project Overview
+**Healthcare based complete MLOps project** that predicts whether an ICU patient is likely to deteriorate in the **next 6 hours** using multivariate time-series vital signs.
 
-This project implements a **research-grade healthcare MLOps system** for predicting **ICU patient deterioration 4–6 hours in advance** using multivariate physiological time-series data.
-
-The goal is twofold:
-
-* **Academic signal (professors):** clinical relevance, rigorous modeling, explainability, and honest assumptions
-* **Industry signal (recruiters):** end-to-end MLOps, reproducibility, deployment, monitoring, and system thinking
-
-This is **not** a Kaggle-style or notebook-only project. It is designed as a realistic clinical decision-support *simulation*.
+This project is intentionally designed to demonstrate **clinical ML reasoning**, **end-to-end MLOps discipline**, and **production awareness**, rather than just model accuracy.
 
 ---
 
-## 🧠 Clinical Motivation: What is ICU Deterioration?
+## 🎯 Project Motivation
 
-In intensive care units, patient deterioration often manifests as **subtle physiological changes hours before critical events** (e.g., respiratory failure, sepsis, hemodynamic collapse).
+Early detection of patient deterioration in Intensive Care Units (ICUs) is critical. Delayed intervention can significantly increase mortality, length of stay, and healthcare costs.
 
-Early-warning systems aim to:
+This system mimics real-world **clinical decision-support systems (CDSS)** by:
 
-* Continuously monitor vitals
-* Detect abnormal temporal patterns
-* Alert clinicians *before* irreversible damage occurs
+* Operating on **time-series physiological signals**
+* Emphasizing **recall (sensitivity)** over raw accuracy
+* Treating ML as a **continuously monitored system**, not a static notebook
 
-This project mimics such systems by predicting deterioration risk using **recent time windows of vital signs**, not static snapshots.
+---
+
+## 🧠 Problem Formulation
+
+**Task**: Binary classification
+**Goal**: Predict whether a patient will deteriorate within the next **6 hours**
+
+**Positive class (1)**: Patient deteriorates
+**Negative class (0)**: Patient remains stable
+
+### Why Recall > Accuracy
+
+In clinical settings:
+
+* **False Negatives** (missing a deteriorating patient) are far more dangerous than false positives
+* A false alert can be reviewed by clinicians
+* A missed alert can cost a life
+
+Therefore:
+
+* **Recall** is prioritized during model evaluation
+* Accuracy alone is considered misleading for this problem
 
 ---
 
 ## 📊 Dataset
 
-**PhysioNet Challenge 2012**
+* ICU time-series vitals (PhysioNet-style structure) of total 12k data only aroun 15% were from positive class (highly imbalanced dataset).
+* Features include:
 
-* ~8,000 ICU stays
-* Hourly multivariate time-series
-* Realistic missingness and noise
-* Open-access, clinically grounded
+  * Heart Rate
+  * Blood Pressure (Systolic / Diastolic)
+  * Respiratory Rate
+  * SpO₂
+  * Other physiological indicators
 
-### Why this dataset?
+For data-drift analysis, data is split into:
 
-* Represents real ICU workflows
-* Avoids tabular shortcuts
-* Enables temporal modeling and sliding-window prediction
-
----
-
-## 🎯 Problem Framing
-
-* **Input:** Past N-hour multivariate vital sign window
-* **Output:** Binary risk of deterioration in the next 4–6 hours
-
-### Why 4–6 hours?
-
-* Clinically actionable window
-* Matches real ICU escalation timelines
-* Avoids trivial short-horizon predictions
+* **Reference dataset** 
+* **Current dataset** 
 
 ---
 
-## 📐 Modeling Strategy
+## 🧠 Model Architecture
 
-### Architecture
+* **1D CNN** for local temporal pattern extraction
+* **GRU (Gated Recurrent Unit)** for sequential dependency modeling
 
-* **1D CNN:** captures local temporal patterns (e.g., rapid SpO₂ drops)
-* **GRU:** models longer-term physiological trends
+This hybrid design allows:
 
-Baselines:
+* CNN → short-term signal patterns
+* GRU → longer temporal dependencies
 
-* GRU-only
-* CNN-only
-
-This progression establishes scientific control before complexity.
+The architecture balances **performance** and **computational feasibility**.
 
 ---
 
-## 📈 Evaluation Philosophy (Very Important)
-
-ICU deterioration is a **highly imbalanced** problem.
-
-### Why recall over accuracy?
-
-* Missing a deteriorating patient is clinically costly
-* Accuracy can be misleading when negatives dominate
-
-### Target metric ranges (early-stage realism)
-
-| Metric    | Target Range           |
-| --------- | ---------------------- |
-| Recall    | 0.85 – 0.92            |
-| Precision | 0.25 – 0.45            |
-| PR-AUC    | > baseline prevalence  |
-| ROC-AUC   | ≥ 0.65                 |
-| Accuracy  | ≥ 0.60 (not optimized) |
-
-Dynamic thresholding and class-weighted loss were used to avoid trivial “predict-all-positive” behavior.
-
----
-
-## ⚙️ MLOps Architecture
-
-### High-level System Diagram
+## ⚙️ System Architecture (End-to-End)
 
 ```
-        ┌────────────┐
-        │ Raw ICU    │
-        │ Data       │
-        └─────┬──────┘
-              │
-        ┌─────▼──────┐
-        │ DVC        │  ← data & artifact versioning
-        └─────┬──────┘
-              │
-        ┌─────▼──────┐
-        │ Training   │  ← CNN+GRU (PyTorch)
-        └─────┬──────┘
-              │
-        ┌─────▼──────┐
-        │ MLflow     │  ← experiments & model registry
-        └─────┬──────┘
-              │
-        ┌─────▼──────┐
-        │ FastAPI    │  ← inference service
-        └─────┬──────┘
-              │
-   ┌──────────▼──────────┐
-   │ Prometheus / Grafana│  ← service monitoring
-   └─────────────────────┘
-```
+                ┌────────────────────────────┐
+                │      Raw ICU Data           │
+                │   (PhysioNet-style)         │
+                └─────────────┬──────────────┘
+                              │
+                              ▼
+                ┌────────────────────────────┐
+                │   Data Processing Pipeline  │
+                │  (Cleaning, Windowing,      │
+                │   Feature Engineering)      │
+                └─────────────┬──────────────┘
+                              │
+          ┌───────────────────┴───────────────────┐
+          │                                       │
+          ▼                                       ▼
+┌──────────────────────┐               ┌──────────────────────┐
+│  DVC (Data & Artifacts│               │ Evidently AI (Optional│
+│  Versioning)          │               │ Drift Analysis)       │
+│  - raw data           │               │ Reference vs Current  │
+│  - processed data     │               │ HTML Report           │
+└───────────┬──────────┘               └──────────────────────┘
+            │
+            ▼
+┌──────────────────────────────────────────────┐
+│          Training & Evaluation Pipeline        │
+│      (CNN + GRU, PyTorch)                      │
+│                                                │
+│  Metrics: Recall, Precision, PR-AUC, ROC-AUC  │
+└───────────────┬──────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────┐
+│              MLflow                            │
+│  - Experiment Tracking                         │
+│  - Metrics & Artifacts                         │
+│  - Model Registry (Conditional Promotion)     │
+└───────────────┬──────────────────────────────┘
+                │
+                ▼
+┌──────────────────────────────────────────────┐
+│              Airflow                           │
+│  Orchestrates:                                 │
+│  - DVC Repro                                   │
+│  - Training                                    │
+│  - Evaluation                                  │
+│  - Registry Decision                           │
+└───────────────┬──────────────────────────────┘
+                │
+                ▼
+        ┌────────────────────────────┐
+        │   Docker Images Built via   │
+        │   CI (GitHub Actions)       │
+        │                              │
+        │  - ML Training Image        │
+        │  - FastAPI Backend Image    │
+        │  - Frontend Image           │
+        └─────────────┬──────────────┘
+                      │
+                      ▼
+              ┌──────────────────┐
+              │   Docker Hub      │
+              └───────┬──────────┘
+                      │
+          ┌───────────┴────────────┐
+          ▼                        ▼
+┌──────────────────┐    ┌──────────────────────┐
+│ FastAPI Backend  │◄───│   ML Inference Image  │
+│  /predict        │    │   (Loaded from        │
+│  /metrics        │    │    MLflow Registry)   │
+└──────────┬───────┘    └──────────────────────┘
+           │
+           ▼
+┌────────────────────────────┐
+│        Frontend UI          │
+│  (Risk Score Visualization) │
+└──────────┬─────────────────┘
+           │
+           ▼
+┌──────────────────────────────────────────────┐
+│     Prometheus → Grafana                      │
+│  - Request Rate                               │
+│  - Latency                                   │
+│  - Error Rate                                │
+│  - Risk Score Distribution                   │
+└──────────────────────────────────────────────┘
+---
+
+## 🧪 Training & Experiment Tracking
+
+### MLflow
+
+Used for:
+- Experiment tracking
+- Metric logging (Recall, Precision, Loss)
+- Model versioning
+
+**Important Design Choice**:
+- Models are **registered only if they meet a recall threshold**
+- This enforces clinical safety logic directly in the pipeline
 
 ---
 
-## 📦 Data & Experiment Management
+## 🛠️ Orchestration with Airflow
 
-### DVC
+Apache Airflow is used to orchestrate the ML pipeline:
 
-* Tracks raw data, processed features, and model artifacts
-* Enables reproducibility across experiments
+- Data preparation
+- Model training
+- Evaluation
+- Conditional model registration
 
-Example:
+Runs can be:
+- Triggered manually (current setup)
+- Scheduled (e.g., daily retraining)
 
-```bash
-dvc repro
-```
-
-### MLflow (via DagsHub)
-
-* Logs parameters, metrics, and artifacts
-* Model promotion based on metric thresholds
+Airflow is treated as a **pipeline controller**, not a deployment tool.
 
 ---
 
-## 🔁 Pipeline Orchestration (Airflow)
+## 🚀 Inference API (FastAPI)
 
-Airflow orchestrates the **existing pipeline**, not the ML logic.
-
-DAG stages:
-
-1. Data ingestion
-2. Validation
-3. Feature generation
-4. Training
-5. Evaluation
-6. Conditional model registration
-
-Airflow schedules *when* things run; DVC defines *what* runs.
+A lightweight **FastAPI** service provides:
+- `/predict` → Risk score inference
+- `/metrics` → Prometheus-compatible metrics
 
 ---
 
-## 🚀 Serving & Deployment
+## 📈 Monitoring (Prometheus + Grafana)
 
-### Backend (FastAPI)
+### Metrics Tracked
 
-Endpoints:
+- Request count
+- Request latency
+- Error rate
+- Risk score distribution (histogram)
 
-* `/health`
-* `/predict`
-* `/metrics`
+### Why Monitoring Matters
 
-The API loads the **Production model dynamically from MLflow**, enabling model updates without rebuilding images.
+Monitoring answers questions like:
+- Is the model being used?
+- Is latency acceptable?
+- Are predictions drifting toward extreme values?
 
-### Frontend
-
-* Simulated ICU patient timeline
-* Time slider + vital sign trends
-* Risk score and alert level
-
-This avoids unrealistic manual feature entry and mirrors ICU monitoring behavior.
+Prometheus acts as a **metrics collector**, Grafana as the **visual layer**.
 
 ---
 
-## 📊 Monitoring
+## 🔍 Data Drift Detection (Evidently AI)
 
-### Service Monitoring (Prometheus + Grafana)
-
-Tracks:
-
-* Request count
-* Latency
-* Error rate
-* Risk-score distribution
-
-This answers: *“Is the system behaving safely in real time?”*
-
----
-
-## 📉 Data Drift Detection (Evidently AI)
-
-No live data stream is available.
+Even without continuous data flow, drift detection was implemented to demonstrate **production awareness**.
 
 ### Approach
 
-* **Reference:** earlier ICU cohort
-* **Current:** later ICU cohort
+- Reference dataset vs current dataset (Set A vs Set C)
+- Statistical drift detection
+- HTML report generation
 
-Evidently is used to **simulate post-deployment drift** via temporal splits.
+### Outcome
 
-Output:
+- ~2% drift detected
+- Confirms data stability in controlled setup
 
-* HTML drift report
-
-This demonstrates capability without overstating production claims.
-
----
-
-## 🧪 CI/CD
-
-### CI (GitHub Actions)
-
-* Linting
-* Unit tests
-* DAG import validation
-* Docker image builds
-
-CI is code-driven.
-
-### Model updates
-
-Handled via **MLflow registry**, not CI/CD pipelines.
+This step shows readiness for **real-world deployment**, where drift is unavoidable.
 
 ---
 
-## 🧭 Design Philosophy
+## 🐳 Containerization
 
-* Prefer correctness over complexity
-* Separate training, serving, and orchestration concerns
-* Document limitations explicitly
-* Avoid pretending to have live ICU data
+- Docker used for:
+  - Training pipeline
+  - Inference service
+  - Monitoring stack
 
----
+- `docker-compose` orchestrates:
+  - ML API
+  - Prometheus
+  - Grafana
 
-## 📌 Project Status
-
-✔ Completed end-to-end lifecycle
-✔ Reproducible
-✔ Honest about constraints
-
-Future extensions are possible but intentionally deferred.
+This ensures **environment reproducibility**.
 
 ---
 
-## 👤 Author
+## 🔁 CI/CD (GitHub Actions)
 
-**Santosh Sapkota**
-Healthcare ML & MLOps
+### Continuous Integration (CI)
+
+- Code linting
+- Docker build validation
+- Pipeline consistency checks
+
+### Continuous Deployment (CD)
+
+- API redeployment on main branch updates
+- Model lifecycle handled via MLflow (not CI)
+
+**Key Insight**:
+> CI/CD deploys code, not models. Model governance is handled by MLflow + pipeline logic.
+
+---
+
+## 🧠 Final Note
+
+This project represents **how ML systems behave in the real world** — imperfect data, safety constraints, monitoring, and accountability.
+
+It is intentionally scoped to demonstrate **depth over breadth**.
+
+```
