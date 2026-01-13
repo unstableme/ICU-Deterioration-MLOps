@@ -29,7 +29,7 @@ def convert_to_2d(X):
     dfs = []
     for stats, values in stats.items():
         df = pd.DataFrame(values)
-        df.columns = [f"f{idx}_{stats}" for idx in range(values.shape(1))]
+        df.columns = [f"f{idx}_{stats}" for idx in range(values.shape[1])]
         dfs.append(df)
     
     return pd.concat(dfs, axis=1)
@@ -64,7 +64,3 @@ def prepare_drift_data():
 
 if __name__ == "__main__":
     prepare_drift_data()
-
-
-
-
