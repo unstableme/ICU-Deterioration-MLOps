@@ -4,6 +4,8 @@
 
 This project is intentionally designed to demonstrate **clinical ML reasoning**, **end-to-end MLOps discipline**, and **production awareness**, rather than just model accuracy.
 
+** Visit the web here: https://icu-deterioration-frontend-production.up.railway.app/
+
 ---
 
 ## 🎯 Project Motivation
