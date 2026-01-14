@@ -1,0 +1,12 @@
+# Exclude generated reports
+*.html linguist-generated
+*.json linguist-generated
+*.csv linguist-generated
+*.parquet linguist-generated
+
+# Exclude virtual environments
+venv/* linguist-vendored
+myvenv/* linguist-vendored
+
+# Exclude notebooks output if needed
+*.ipynb linguist-detectable=true
